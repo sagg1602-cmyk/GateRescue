@@ -14,6 +14,8 @@ export function Sidebar({
   outageTerminalId,
   onSimulateOutage,
   onRestoreAccess,
+  onOpenReconciliation,
+  reconciliationOpen,
   onReset,
 }: {
   now: string;
@@ -21,6 +23,8 @@ export function Sidebar({
   outageTerminalId: string;
   onSimulateOutage: () => void;
   onRestoreAccess: () => void;
+  onOpenReconciliation: () => void;
+  reconciliationOpen: boolean;
   onReset: () => void;
 }) {
   const outageTerminal = terminals.find((t) => t.id === outageTerminalId);
@@ -90,6 +94,15 @@ export function Sidebar({
           >
             <span className="h-2 w-2 rounded-full bg-amber-400" aria-hidden />
             Restore {outageTerminal?.shortName} access
+          </Button>
+          <Button
+            variant="ghostDark"
+            onClick={onOpenReconciliation}
+            aria-pressed={reconciliationOpen}
+            className="justify-start"
+          >
+            <span className="h-2 w-2 rounded-full bg-teal-400" aria-hidden />
+            Reconciliation
           </Button>
           <Button variant="ghostDark" onClick={onReset} className="justify-start">
             <span className="h-2 w-2 rounded-full bg-slate-400" aria-hidden />

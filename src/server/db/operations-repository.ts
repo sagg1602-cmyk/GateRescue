@@ -50,7 +50,7 @@ interface DemoStateRow {
 }
 interface DriverReportRow {
   id: string; driver_id: string; source: DriverReport["source"]; provider_event_id: string;
-  reported_at: string; received_at: string; applied_at: string | null; availability: DriverReport["availability"];
+  provider_call_id: string | null; reported_at: string; received_at: string; applied_at: string | null; availability: DriverReport["availability"];
   available_from: string; available_until: string | null; location: string | null;
   equipment: DriverReport["equipment"]; note: string;
 }
@@ -148,6 +148,7 @@ function makeMappers(timeZone: string) {
         driverId: row.driver_id,
         source: row.source,
         providerEventId: row.provider_event_id,
+        providerCallId: row.provider_call_id ?? null,
         reportedAt: zoned(row.reported_at),
         receivedAt: new Date(row.received_at).toISOString(),
         appliedAt: zonedOrNull(row.applied_at),
@@ -196,6 +197,24 @@ export const SNAPSHOT_EVENT_LIMIT = 200;
 
 export class OperationsRepository implements DriverReportStore {
   constructor(private readonly db: SupabaseClient) {}
+
+  /** Simulated clock, scenario identity and time zone, or null if the scenario import has not run. */
+  async getClock(): Promise<{ simNow: string; timeZone: string; scenarioId: string | null; scenarioVersion: number | null } | null> {
+    const { data, error } = await this.db
+      .from("demo_state")
+      .select("sim_now, time_zone, scenario_id, scenario_version")
+      .eq("id", 1)
+      .maybeSingle<{ sim_now: string; time_zone: string; scenario_id: string | null; scenario_version: number | null }>();
+    if (error) throw new Error(`demo_state: ${error.message}`);
+    return data
+      ? {
+          simNow: toZonedIso(data.sim_now, data.time_zone),
+          timeZone: data.time_zone,
+          scenarioId: data.scenario_id,
+          scenarioVersion: data.scenario_version,
+        }
+      : null;
+  }
 
   private async timeZone(): Promise<string> {
     const { data } = await this.db.from("demo_state").select("time_zone").eq("id", 1).maybeSingle<{ time_zone: string }>();
@@ -277,6 +296,7 @@ export class OperationsRepository implements DriverReportStore {
       p_driver_id: input.driverId,
       p_source: input.source,
       p_provider_event_id: input.providerEventId,
+      p_provider_call_id: input.providerCallId,
       p_reported_at: input.reportedAt,
       p_availability: input.availability,
       p_available_from: input.availableFrom,

@@ -36,6 +36,15 @@ function parseEnv<T extends z.ZodType>(schema: T): z.output<T> {
   return result.data;
 }
 
+const RetellEnvSchema = z.object({
+  // The Retell API key with the webhook badge; it signs custom-function and webhook requests.
+  RETELL_API_KEY: z.string().min(20),
+});
+
+export function getRetellEnv() {
+  return parseEnv(RetellEnvSchema);
+}
+
 export function getSupabaseEnv() {
   return parseEnv(SupabaseEnvSchema);
 }

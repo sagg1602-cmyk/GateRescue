@@ -379,6 +379,19 @@ async function submitCheckIn(input: Omit<DriverReportRequest, "providerEventId">
 
 ---
 
+## `POST /api/retell` — Retell post-call webhook
+
+Server-to-server only. Authenticated by `X-Retell-Signature`. Handles
+`call_analyzed` and maps Post Call Extraction fields to a driver report
+(`source: "retell"`). See [retell-integration.md](retell-integration.md).
+
+## `POST /api/retell/driver-report` — Retell voice reports
+
+Server-to-server only (Retell custom function), authenticated by
+`X-Retell-Signature` rather than the demo session. Records reports with
+`source: "retell"` through the same service. Not for dashboard use. See
+[retell-integration.md](retell-integration.md).
+
 ## Not in the backend yet
 
 These still run only in the dashboard's local reducer and have no endpoints:

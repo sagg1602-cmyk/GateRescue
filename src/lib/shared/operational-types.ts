@@ -262,6 +262,8 @@ export interface DriverReport {
   source: DriverReportSource;
   /** Unique per source; used to deduplicate retried deliveries (e.g. Retell webhooks). */
   providerEventId: string;
+  /** Provider call id (Retell call_id); at most one report per source and call. */
+  providerCallId: string | null;
   /** When the driver gave the report, per the source. */
   reportedAt: IsoDateTime;
   /** When the server stored the report (real-world instant). */

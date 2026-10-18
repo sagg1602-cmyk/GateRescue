@@ -127,8 +127,12 @@ Redeploy after changing variables.
 1. Run `supabase/import/authoritative_dataset.sql` to reset the scenario to
    14:05 (D02 not reported).
 2. Deploy, then set the custom-function URL to the deployment's domain.
-   Vercel Deployment Protection blocks Retell on protected preview URLs, so
-   use the production domain or an unprotected deployment.
+   A protected preview URL blocks Retell unless the custom function sends
+   Vercel's automation bypass header. In Vercel → Project → Settings →
+   Deployment Protection → Protection Bypass for Automation, create a secret.
+   In the Retell custom function → Headers, add
+   `x-vercel-protection-bypass: <that secret>`
+   ([Vercel docs](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation)).
 3. Start a test call with `driver_id = D02`. Say: available from 15:00
    until 19:00, at Terminal B staging area, reefer_40.
 4. Expect the agent to read back "Recorded: Aisha Johnson available,

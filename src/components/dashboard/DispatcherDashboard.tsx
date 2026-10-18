@@ -5,7 +5,9 @@ import { createInitialDemoState, demoReducer, OUTAGE_TERMINAL_ID } from "@/lib/d
 import { isOutageAffected, isUrgent } from "@/lib/demo/job-status";
 import { CUSTOMERS } from "@/lib/demo/synthetic-data";
 import type { Job, Terminal } from "@/lib/demo/frontend-types";
+import { AccessGate } from "./AccessGate";
 import { ActivityLog } from "./ActivityLog";
+import { BackendQueuePanel } from "./BackendQueuePanel";
 import { ContinuityStrip, type ContinuityPhase } from "./ContinuityStrip";
 import { DriverCheckInForm } from "./DriverCheckInForm";
 import { DriverPanel } from "./DriverPanel";
@@ -81,6 +83,10 @@ export function DispatcherDashboard() {
                 one lost in the shipments table.
               </div>
             )}
+
+            <AccessGate>
+              <BackendQueuePanel />
+            </AccessGate>
 
             <SummaryCards
               totalJobs={state.jobs.length}

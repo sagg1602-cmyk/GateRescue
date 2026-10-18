@@ -61,7 +61,7 @@ The names must match exactly:
 | `available` | Boolean | True if the driver says they can take a new load today; false if not. Leave empty if unclear. | — |
 | `available_from` | Text | Time the driver becomes available, 24-hour HH:MM local time, e.g. 15:00. Leave empty if not stated or unclear. | — |
 | `available_until` | Text | Time the driver's availability ends, 24-hour HH:MM local time, e.g. 19:00. Leave empty if not stated. | — |
-| `location_type` | Selector | Where the driver is now. | `terminal` (or `terminal_yard`), `staging_area`, `other`, `unknown` |
+| `location_type` | Selector | Where the driver is now. | `terminal` (or `terminal_yard` / `terminal_gate`), `staging_area`, `other`, `unknown` |
 | `terminal_name` | Selector | Which terminal the driver is at or near. | `Terminal A`, `Terminal B`, `Terminal C`, `none` |
 | `equipment` | Selector | Container equipment the driver has. | `dry_20`, `dry_40`, `reefer_40`, `unknown` |
 | `appointment_outcome` | Text | Anything said about the terminal appointment, one short phrase. | — |
@@ -79,7 +79,8 @@ Mapping rules:
   from off-duty or give a return time. Add a selector field later if needed.
 - `staging_area` plus `Terminal B` becomes the location "Terminal B staging
   area", which the recovery engine places in the Terminal B area.
-  `terminal` or `terminal_yard` plus `Terminal B` becomes "Terminal B".
+  `terminal`, `terminal_yard` or `terminal_gate` plus `Terminal B` becomes
+  "Terminal B".
   Other location types stay unknown.
 - `notes` and `appointment_outcome` go into the report note.
 

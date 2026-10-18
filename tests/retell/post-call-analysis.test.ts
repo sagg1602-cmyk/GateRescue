@@ -126,6 +126,11 @@ describe("post-call mapping", () => {
     assert.equal(composeLocation("terminal", "Terminal C"), "Terminal C");
     assert.equal(composeLocation("terminal_yard", "Terminal B"), "Terminal B");
     assert.equal(composeLocation("terminal_yard", "none"), null);
+    assert.equal(composeLocation("terminal_gate", "Terminal B"), "Terminal B");
+    assert.equal(composeLocation("terminal_gate", "terminal a"), "Terminal A");
+    assert.equal(composeLocation("terminal_gate", "none"), null);
+    assert.equal(composeLocation("terminal_gate", undefined), null);
+    assert.equal(composeLocation("terminal_gate", "Terminal Z"), null);
     assert.equal(composeLocation("other", "Terminal B"), null);
     assert.equal(composeLocation("yard", "Terminal B"), null);
     assert.equal(composeLocation("staging_area", "Terminal Z"), null);

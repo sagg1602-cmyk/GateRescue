@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ApiRequestError, getState } from "@/lib/api/client";
 import type { Tone } from "@/lib/demo/job-status";
 import { formatTime } from "@/lib/demo/time";
 import type { StateResponse } from "@/lib/shared/api-contract";
-import type { RecoveryCheck, RecoveryQueueEntry, RecoveryStatus } from "@/lib/shared/operational-types";
-import { useAccessGate } from "./AccessGate";
+import type {
+  DriverReport,
+  DriverReportSource,
+  RecoveryCheck,
+  RecoveryQueueEntry,
+  RecoveryStatus,
+} from "@/lib/shared/operational-types";
 import { TierBadge } from "./JobBadges";
+import { useLiveBackend } from "./LiveBackendContext";
 import { Badge, Button, Panel } from "./ui";
 
 const STATUS_CHIP: Record<RecoveryStatus, { label: string; tone: Tone }> = {
@@ -35,39 +40,98 @@ function humanize(code: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
+const POLL_INTERVAL_MS = 5_000;
+const HIGHLIGHT_MS = 6_000;
+const RECENT_REPORT_LIMIT = 5;
+
+const isTabVisible = () => typeof document === "undefined" || document.visibilityState === "visible";
+
+interface StatusChange {
+  from: RecoveryStatus;
+  to: RecoveryStatus;
+}
+
+/** Queue entries whose status differs between two consecutive snapshots, keyed by job id. */
+function statusChanges(prev: StateResponse | null, next: StateResponse | null): Map<string, StatusChange> {
+  const changes = new Map<string, StatusChange>();
+  if (!prev?.recoveryQueue || !next?.recoveryQueue) return changes;
+  const before = new Map(prev.recoveryQueue.entries.map((e) => [e.jobId, e.status]));
+  for (const entry of next.recoveryQueue.entries) {
+    const from = before.get(entry.jobId);
+    if (from && from !== entry.status) changes.set(entry.jobId, { from, to: entry.status });
+  }
+  return changes;
+}
+
+const REPORT_SOURCE_LABEL: Record<DriverReportSource, string> = {
+  dispatcher: "Dispatcher entry",
+  retell: "Phone call (Retell)",
+  scenario: "Scenario data",
+};
+
+/** StateResponse does not declare driver reports; show them only when the response carries a `driverReports` array. */
+function recentDriverReports(snapshot: StateResponse): DriverReport[] {
+  const reports = (snapshot as StateResponse & { driverReports?: unknown }).driverReports;
+  if (!Array.isArray(reports)) return [];
+  return reports
+    .filter(
+      (r): r is DriverReport =>
+        typeof r?.driverId === "string" && typeof r.reportedAt === "string" && typeof r.source === "string",
+    )
+    .sort((a, b) => Date.parse(b.reportedAt) - Date.parse(a.reportedAt))
+    .slice(0, RECENT_REPORT_LIMIT);
+}
+
 /** Read-only view of the backend's ranked recovery queue from GET /api/state. */
 export function BackendQueuePanel() {
-  const { onSessionExpired, onBackendUnavailable } = useAccessGate();
-  const [snapshot, setSnapshot] = useState<StateResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshCount, setRefreshCount] = useState(0);
+  const { snapshot, updatedAt, loading, error, refresh } = useLiveBackend();
+  const [visible, setVisible] = useState(isTabVisible);
 
   useEffect(() => {
-    const controller = new AbortController();
-    getState(controller.signal).then(
-      (next) => {
-        setSnapshot(next);
-        setError(null);
-        setLoading(false);
-      },
-      (err: unknown) => {
-        if (controller.signal.aborted) return;
-        if (err instanceof ApiRequestError && err.status === 401) return onSessionExpired();
-        if (err instanceof ApiRequestError && err.backendUnavailable) return onBackendUnavailable();
-        setError(err instanceof Error ? err.message : "Could not load the recovery queue.");
-        setLoading(false);
-      },
-    );
-    return () => controller.abort();
-  }, [refreshCount, onSessionExpired, onBackendUnavailable]);
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      clearInterval(timer);
+      timer = setInterval(() => void refresh({ quiet: true }), POLL_INTERVAL_MS);
+    };
+    const onVisibilityChange = () => {
+      const nowVisible = isTabVisible();
+      setVisible(nowVisible);
+      if (nowVisible) {
+        void refresh({ quiet: true });
+        start();
+      } else {
+        clearInterval(timer);
+      }
+    };
 
-  const refresh = () => {
-    setLoading(true);
-    setRefreshCount((n) => n + 1);
-  };
+    void refresh();
+    if (isTabVisible()) start();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refresh]);
+
+  const [comparedSnapshot, setComparedSnapshot] = useState(snapshot);
+  const [changes, setChanges] = useState<Map<string, StatusChange>>(() => new Map());
+  if (snapshot !== comparedSnapshot) {
+    setComparedSnapshot(snapshot);
+    const next = statusChanges(comparedSnapshot, snapshot);
+    if (next.size > 0 || !snapshot) setChanges(next);
+  }
+
+  useEffect(() => {
+    if (changes.size === 0) return;
+    const timer = setTimeout(() => setChanges(new Map()), HIGHLIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [changes]);
 
   const queue = snapshot?.recoveryQueue ?? null;
+  const reports = snapshot ? recentDriverReports(snapshot) : [];
+  const announcement = [...changes].map(
+    ([jobId, { from, to }]) => `${jobId} changed from ${STATUS_CHIP[from].label} to ${STATUS_CHIP[to].label}.`,
+  );
 
   return (
     <Panel
@@ -86,9 +150,12 @@ export function BackendQueuePanel() {
         )
       }
       actions={
-        <Button onClick={refresh} disabled={loading}>
-          {loading ? "Refreshing…" : "Refresh"}
-        </Button>
+        <>
+          <LiveIndicator visible={visible} failing={error !== null} updatedAt={updatedAt} />
+          <Button onClick={() => void refresh()} disabled={loading}>
+            {loading ? "Refreshing…" : "Refresh"}
+          </Button>
+        </>
       }
     >
       {error && (
@@ -115,11 +182,72 @@ export function BackendQueuePanel() {
           {[...queue.entries]
             .sort((a, b) => a.rank - b.rank)
             .map((entry) => (
-              <QueueEntry key={entry.jobId} entry={entry} snapshot={snapshot!} estimatesLabel={queue.estimatesLabel} />
+              <QueueEntry
+                key={entry.jobId}
+                entry={entry}
+                snapshot={snapshot!}
+                estimatesLabel={queue.estimatesLabel}
+                change={changes.get(entry.jobId)}
+              />
             ))}
         </ol>
       )}
+
+      <p aria-live="polite" className="sr-only">
+        {announcement.join(" ")}
+      </p>
+
+      {snapshot && reports.length > 0 && <RecentDriverReports reports={reports} snapshot={snapshot} />}
     </Panel>
+  );
+}
+
+function RecentDriverReports({ reports, snapshot }: { reports: DriverReport[]; snapshot: StateResponse }) {
+  return (
+    <section className="border-t border-slate-200 bg-slate-50/70 px-5 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Recent driver reports</h3>
+        <Badge tone="amber">Driver-reported, unverified</Badge>
+      </div>
+      <ul className="mt-2 divide-y divide-slate-100 text-xs">
+        {reports.map((report) => {
+          const driver = snapshot.drivers.find((d) => d.id === report.driverId);
+          return (
+            <li key={report.id ?? `${report.driverId}-${report.reportedAt}`} className="flex gap-3 py-1.5">
+              <span className="w-12 shrink-0 font-mono tabular-nums text-slate-500">{formatTime(report.reportedAt)}</span>
+              <span className="min-w-0 flex-1">
+                <span className="font-medium text-slate-800">
+                  {driver ? `${driver.name} (${report.driverId})` : report.driverId}
+                </span>
+                <span className="text-slate-400"> · </span>
+                <span className="text-slate-500">{REPORT_SOURCE_LABEL[report.source] ?? report.source}</span>
+                <span className="block text-slate-600">{report.note || "No note"}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+const CLOCK = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+
+/** Polling status; "Updated" is the browser's real clock, unlike the simulated times elsewhere. */
+function LiveIndicator({ visible, failing, updatedAt }: { visible: boolean; failing: boolean; updatedAt: Date | null }) {
+  const state = failing
+    ? { label: "Update failed", dot: "bg-amber-500", text: "text-amber-800" }
+    : visible
+      ? { label: "Live", dot: "bg-teal-500 animate-pulse", text: "text-teal-800" }
+      : { label: "Paused", dot: "bg-slate-400", text: "text-slate-500" };
+  return (
+    <span className="flex items-center gap-2 text-xs">
+      <span className={`flex items-center gap-1.5 font-medium ${state.text}`}>
+        <span className={`h-2 w-2 rounded-full ${state.dot}`} aria-hidden />
+        {state.label}
+      </span>
+      {updatedAt && <span className="tabular-nums text-slate-500">Updated {CLOCK.format(updatedAt)}</span>}
+    </span>
   );
 }
 
@@ -127,10 +255,13 @@ function QueueEntry({
   entry,
   snapshot,
   estimatesLabel,
+  change,
 }: {
   entry: RecoveryQueueEntry;
   snapshot: StateResponse;
   estimatesLabel: string;
+  /** Set briefly after a refresh in which this entry's status changed. */
+  change?: StatusChange;
 }) {
   const job = snapshot.jobs.find((j) => j.id === entry.jobId);
   const customer = job && snapshot.customers.find((c) => c.id === job.customerId);
@@ -140,7 +271,16 @@ function QueueEntry({
   const failed = entry.checks.filter((c) => c.result === "fail").length;
 
   return (
-    <li className="px-5 py-3">
+    <li
+      className={`px-5 py-3 transition-colors duration-700 ${
+        change ? "bg-amber-50 shadow-[inset_3px_0_0_0_var(--color-amber-400)]" : ""
+      }`}
+    >
+      {change && (
+        <p className="mb-1.5 ml-10 text-xs font-medium text-amber-800">
+          Status changed: {STATUS_CHIP[change.from].label} → {STATUS_CHIP[change.to].label}
+        </p>
+      )}
       <div className="flex items-start gap-3">
         <span className="mt-0.5 w-7 shrink-0 text-right font-mono text-sm font-semibold text-slate-400">
           #{entry.rank}

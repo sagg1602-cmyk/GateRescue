@@ -9,7 +9,7 @@ import { AccessGate } from "./AccessGate";
 import { ActivityLog } from "./ActivityLog";
 import { BackendQueuePanel } from "./BackendQueuePanel";
 import { ContinuityStrip, type ContinuityPhase } from "./ContinuityStrip";
-import { DriverCheckInForm } from "./DriverCheckInForm";
+import { DriverCheckIn } from "./DriverCheckInForm";
 import { DriverPanel } from "./DriverPanel";
 import { ReconciliationView } from "./ReconciliationView";
 import { RecoveryPanel } from "./RecoveryPanel";
@@ -120,10 +120,10 @@ export function DispatcherDashboard() {
               </div>
               <div className="col-span-4 flex min-w-0 flex-col gap-5">
                 <DriverPanel drivers={state.drivers} now={state.now}>
-                  <DriverCheckInForm
+                  <DriverCheckIn
                     key={resetCount}
-                    drivers={state.drivers}
-                    onSubmit={(input) => dispatch({ type: "driver-check-in", ...input })}
+                    localDrivers={state.drivers}
+                    onLocalSubmit={(input) => dispatch({ type: "driver-check-in", ...input })}
                   />
                 </DriverPanel>
                 <ActivityLog events={state.events} />

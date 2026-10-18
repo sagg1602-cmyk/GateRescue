@@ -1,25 +1,9 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { ApiRequestError, getDemoSession, startDemoSession } from "@/lib/api/client";
+import { useState, type FormEvent, type ReactNode } from "react";
+import { ApiRequestError, startDemoSession } from "@/lib/api/client";
+import { useLiveBackend } from "./LiveBackendContext";
 import { Button, Panel } from "./ui";
-
-type GateStatus = "checking" | "signed-out" | "authenticated" | "unavailable";
-
-interface AccessGateControls {
-  /** Call on a 401 from a protected endpoint: shows the access-code prompt again. */
-  onSessionExpired: () => void;
-  /** Call on a 503 or network error: falls back to the local demo banner. */
-  onBackendUnavailable: () => void;
-}
-
-const AccessGateContext = createContext<AccessGateControls | null>(null);
-
-export function useAccessGate(): AccessGateControls {
-  const controls = useContext(AccessGateContext);
-  if (!controls) throw new Error("useAccessGate must be used inside <AccessGate>");
-  return controls;
-}
 
 /**
  * Guards live-backend content. Renders `children` only with a valid demo
@@ -29,36 +13,7 @@ export function useAccessGate(): AccessGateControls {
  * beyond the input field.
  */
 export function AccessGate({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<GateStatus>("checking");
-  const [checkCount, setCheckCount] = useState(0);
-  const [expired, setExpired] = useState(false);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    getDemoSession(controller.signal).then(
-      (session) => setStatus(session.authenticated ? "authenticated" : "signed-out"),
-      () => {
-        if (!controller.signal.aborted) setStatus("unavailable");
-      },
-    );
-    return () => controller.abort();
-  }, [checkCount]);
-
-  const recheck = () => {
-    setStatus("checking");
-    setCheckCount((n) => n + 1);
-  };
-
-  const controls = useMemo<AccessGateControls>(
-    () => ({
-      onSessionExpired: () => {
-        setExpired(true);
-        setStatus("signed-out");
-      },
-      onBackendUnavailable: () => setStatus("unavailable"),
-    }),
-    [],
-  );
+  const { status, sessionExpired, recheck, signedIn, onBackendUnavailable } = useLiveBackend();
 
   if (status === "checking") {
     return (
@@ -87,18 +42,11 @@ export function AccessGate({ children }: { children: ReactNode }) {
 
   if (status === "signed-out") {
     return (
-      <AccessCodePrompt
-        expired={expired}
-        onAuthenticated={() => {
-          setExpired(false);
-          setStatus("authenticated");
-        }}
-        onUnavailable={() => setStatus("unavailable")}
-      />
+      <AccessCodePrompt expired={sessionExpired} onAuthenticated={signedIn} onUnavailable={onBackendUnavailable} />
     );
   }
 
-  return <AccessGateContext value={controls}>{children}</AccessGateContext>;
+  return children;
 }
 
 function AccessCodePrompt({

@@ -91,7 +91,7 @@ export function Panel({
   return (
     <section
       id={id}
-      className={`rounded-card border border-line bg-white shadow-card transition-shadow hover:shadow-card-hover ${className}`}
+      className={`lift rounded-card border border-line bg-white shadow-card ${className}`}
     >
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-6 py-5">
         <div className="min-w-0">

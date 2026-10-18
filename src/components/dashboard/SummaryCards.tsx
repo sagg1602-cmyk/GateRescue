@@ -47,35 +47,36 @@ function useCountUp(value: number | null): number | null {
   return Math.round(value * eased);
 }
 
-function StatCardItem({ card }: { card: StatCard }) {
+function StatCardItem({ card, index }: { card: StatCard; index: number }) {
   const shown = useCountUp(card.value);
   return (
     <div
-      className={`flex min-w-0 flex-col rounded-card border border-t-2 px-6 py-6 shadow-card transition-shadow hover:shadow-card-hover ${
-        card.featured
-          ? "border-ready border-t-white/70 bg-ready text-white max-sm:col-span-2"
-          : "border-line border-t-navy/80 bg-white"
+      className={`relative flex min-w-0 flex-col px-4 py-6 md:px-6 md:py-8 ${
+        card.featured ? "bg-ready-soft shadow-[inset_4px_0_0_0_var(--color-ready)]" : "bg-white"
       }`}
     >
-      <dt className={`eyebrow ${card.featured ? "text-white/85" : "text-ink-muted"}`}>{card.label}</dt>
+      <span className="absolute right-3 top-2 font-mono text-[10px] tracking-[0.14em] text-ink-muted" aria-hidden>
+        {String(index + 1).padStart(2, "0")}
+      </span>
       <dd
-        className={`mt-4 font-display text-6xl font-semibold leading-[0.9] tracking-[-0.03em] tabular-nums md:text-7xl ${
-          card.featured ? "text-white" : "text-rust"
+        className={`order-1 font-display text-6xl font-semibold leading-[0.9] tracking-[-0.03em] tabular-nums md:text-7xl ${
+          card.featured ? "text-ready" : "text-navy"
         }`}
       >
         {shown === null ? "—" : shown}
       </dd>
-      <dd className={`mt-4 text-xs leading-snug ${card.featured ? "text-white/85" : "text-ink-muted"}`}>{card.hint}</dd>
+      <dt className="order-2 mt-4 font-mono text-[11px] uppercase tracking-[0.14em] text-navy">{card.label}</dt>
+      <dd className="order-3 mt-1.5 text-xs leading-snug text-ink-muted">{card.hint}</dd>
     </div>
   );
 }
 
-/** One row of deck-style stat cards with oversized numerals. Stacks 2 → 3 → 5 across breakpoints. */
+/** Blueprint stat row: hairline-divided cells, numeral first, mono label beneath. 2 → 4 across. */
 export function StatCardRow({ cards }: { cards: StatCard[] }) {
   return (
-    <dl className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-      {cards.map((card) => (
-        <StatCardItem key={card.label} card={card} />
+    <dl className="grid grid-cols-2 border-x border-b border-line [&>*]:border-b [&>*]:border-line md:grid-cols-4 [&>*:nth-child(2n)]:border-l md:[&>*:nth-child(n+5)]:border-b-0 md:[&>*:not(:nth-child(4n+1))]:border-l max-md:[&>*:nth-last-child(-n+2)]:border-b-0">
+      {cards.map((card, i) => (
+        <StatCardItem key={card.label} card={card} index={i} />
       ))}
     </dl>
   );
@@ -114,11 +115,12 @@ export function SummaryCards({
     {
       label: "Affected jobs",
       value: affectedJobs,
-      hint: affectedJobs ? "Appointments unverified or lost in outage" : "No outage impact",
+      hint: affectedJobs
+        ? `of ${totalJobs} synthetic moves; appointments unverified or lost`
+        : `of ${totalJobs} synthetic moves; no outage impact`,
     },
     { label: "Urgent jobs", value: urgentJobs, hint: "Critical or due within 3 h, unapproved" },
     { label: "Available drivers", value: availableDrivers, hint: `of ${totalDrivers} on roster, by latest check-in` },
-    { label: "Total jobs", value: totalJobs, hint: "Synthetic import moves today" },
   ];
 
   return <StatCardRow cards={cards} />;

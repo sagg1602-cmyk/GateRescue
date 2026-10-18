@@ -20,8 +20,11 @@ export function LiveSummaryCards({ snapshot }: { snapshot: StateResponse | null 
     },
     { label: "Awaiting verification", value: counts.awaiting, hint: "Appointment or input must be confirmed first" },
     { label: "Blocked", value: counts.blocked, hint: "A mandatory check fails; see blocker and next action" },
-    { label: "In recovery scope", value: counts.inScope, hint: scopeHint },
-    { label: "Total jobs", value: counts.totalJobs, hint: "Jobs in the backend snapshot" },
+    {
+      label: "In recovery scope",
+      value: counts.inScope,
+      hint: counts.totalJobs === null ? scopeHint : `of ${counts.totalJobs} jobs in the snapshot; ${scopeHint.toLowerCase()}`,
+    },
   ];
 
   return <StatCardRow cards={cards} />;

@@ -5,7 +5,7 @@ import type { Customer, Job, RecoveryPlan, Terminal } from "@/lib/demo/frontend-
 import type { StateResponse } from "@/lib/shared/api-contract";
 import { humanizeCode, needsDriverReport, RECOVERY_STATUS_LABEL } from "./snapshot-display";
 
-interface Step {
+export interface Step {
   title: string;
   detail: string;
   /** Job id and customer, set in mono under the headline. */

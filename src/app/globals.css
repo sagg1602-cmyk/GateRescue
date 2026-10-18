@@ -59,6 +59,40 @@
   animation: live-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Page sections rise 12px and fade in on load; stagger with animation-delay. */
+@utility rise-in {
+  animation: rise-in 400ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Cards lift a touch on hover. */
+@utility lift {
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-card-hover);
+  }
+}
+
+/* Status ticker: the track holds two copies and scrolls one copy's width. Pauses on hover. */
+@utility ticker-track {
+  animation: ticker 40s linear infinite;
+  .ticker:hover & {
+    animation-play-state: paused;
+  }
+}
+
+/* Gate drawing: the boom pivots about its hinge. */
+@utility gate-boom {
+  transform-box: view-box;
+  transform-origin: 438px 214px;
+  transition: transform 600ms ease;
+}
+@utility gate-boom-open {
+  transform: rotate(-40deg);
+}
+
 /* Loading placeholder shimmer. */
 @utility skeleton {
   background: linear-gradient(90deg, var(--color-paper-deep) 25%, #f6f4ef 50%, var(--color-paper-deep) 75%);
@@ -98,6 +132,26 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgb(31 111 128 / 0);
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 
@@ -148,5 +202,13 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Ticker stands still: one copy, scrollable by hand, no clone. */
+  .ticker {
+    overflow-x: auto;
+  }
+  .ticker-dup {
+    display: none;
   }
 }

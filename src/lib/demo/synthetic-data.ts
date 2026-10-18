@@ -16,12 +16,16 @@ import type {
   Terminal,
   TerminalId,
 } from "./frontend-types";
+// Explicit ".ts" so scripts/generate-seed.mjs can load this module directly in Node.
+import { setWallClockTime } from "../shared/datetime.ts";
 
 // Times carry the Pacific offset so comparisons respect dates (see src/lib/shared/datetime.ts).
 export const DEMO_DAY = "2026-10-17T00:00:00-07:00";
-export const DEMO_START_TIME = "2026-10-17T06:30:00-07:00";
 
-const t = (hhmm: string) => `2026-10-17T${hhmm}:00-07:00`;
+/** Wall-clock "HH:MM" on the demo day, in the demo day's offset. */
+export const t = (hhmm: string) => setWallClockTime(DEMO_DAY, hhmm);
+
+export const DEMO_START_TIME = t("06:30");
 
 export const TERMINALS: Terminal[] = [
   {

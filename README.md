@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GateRescue
 
-## Getting Started
+Drayage disruption recovery for port dispatchers: when a terminal's
+appointment portal goes down, GateRescue tracks which moves are affected,
+collects driver check-ins, and proposes recovery assignments for dispatcher
+approval. All data in this repository is **synthetic**.
 
-First, run the development server:
+| Area | Owner |
+|---|---|
+| Backend, GitHub, Vercel | Sebastian |
+| Frontend (dispatcher dashboard) | Melanie |
+| Scenario / data, pitch | Maelie |
+
+## Current status
+
+- **Dashboard** (`/`): runs entirely on built-in local synthetic data
+  (`src/lib/demo/`). Not yet connected to the API.
+- **Backend foundation** (branch `backend/foundation`, not merged):
+  `GET /api/state`, `POST /api/driver-reports`, demo session endpoints,
+  Supabase schema with RLS, server-only database access.
+  Contract: [docs/backend-contract.md](docs/backend-contract.md).
+- **Scenario dataset import**: Maelie's CSVs (`data/source/`, unchanged)
+  convert to `supabase/import/authoritative_dataset.sql`.
+  Details and open items: [docs/dataset-import.md](docs/dataset-import.md).
+  - ✅ Migrations, import and API were **tested locally** against a disposable
+    Postgres + PostgREST stack.
+  - ⏳ The **live Supabase import is still pending**: the operational-schema
+    migration has been run; the dataset migration and import have not.
+  - ⚠️ The dataset is missing scenario fields (simulated start time, container
+    availability, driver last-report times). Until they are supplied,
+    **`GET /api/state` returns `503 dataset_incomplete`** with the list of
+    missing values, and driver reports return the same error until the
+    start time is set. Values are never invented to fill the gaps.
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The dashboard needs no configuration. To exercise the API, copy
+`.env.example` to `.env.local` (git-ignored) and fill in the values from the
+backend owner — never commit real credentials.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Useful scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Purpose |
+|---|---|
+| `npm run lint` / `npm run build` | Lint and production build |
+| `npm run db:import:generate [-- --sim-now=2026-10-19THH:MM:00]` | Regenerate the dataset import from `data/source/` |
+| `npm run fixture:ranking` | Regenerate `tests/fixtures/expected-ranking.json` (test fixture, not operational data) |
+| `npm run db:seed:generate` | Regenerate the **legacy** local-demo seed (do not load into the shared project) |

@@ -1,0 +1,175 @@
+{
+  "description": "Expected recovery ranking before and after the driver call, from the scenario owner. Test fixture only — not operational data.",
+  "source": {
+    "file": "data/source/gaterescue_expected_ranking.csv",
+    "sha256": "bcae96608718cc1fa9a3cbc623f52dbf9410757dbffdcd5c3265a2123ceaafe6"
+  },
+  "inferredScenario": {
+    "precondition": "Terminal A appointment portal outage: every Terminal A job is appointment_unverified before the call, although jobs.csv lists all appointments as confirmed.",
+    "driverCall": "D02 (reefer_40, not_reported at start) reports in; J02 becomes ready_for_approval with D02.",
+    "rankedJobs": "Jobs needing dispatcher action: outage-affected Terminal A jobs plus unassigned J02.",
+    "order": "criticality_tier descending, then harm_deadline ascending, then job_id."
+  },
+  "rows": [
+    {
+      "rank": 1,
+      "jobId": "J01",
+      "criticalityTier": 2,
+      "harmDeadline": "2026-10-20T08:00:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 2,
+      "jobId": "J02",
+      "criticalityTier": 1,
+      "harmDeadline": "2026-10-19T17:30:00-07:00",
+      "beforeCall": {
+        "status": "blocked",
+        "blocker": "no_feasible_assignment",
+        "proposedDriverId": null,
+        "nextAction": "wait_for_reefer_driver_report"
+      },
+      "afterCall": {
+        "status": "ready_for_approval",
+        "blocker": null,
+        "proposedDriverId": "D02",
+        "nextAction": "dispatcher_approves"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 3,
+      "jobId": "J09",
+      "criticalityTier": 1,
+      "harmDeadline": "2026-10-19T20:30:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 4,
+      "jobId": "J04",
+      "criticalityTier": 1,
+      "harmDeadline": "2026-10-20T06:00:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 5,
+      "jobId": "J15",
+      "criticalityTier": 0,
+      "harmDeadline": "2026-10-21T12:00:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 6,
+      "jobId": "J11",
+      "criticalityTier": 0,
+      "harmDeadline": "2026-10-23T12:00:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 7,
+      "jobId": "J17",
+      "criticalityTier": 0,
+      "harmDeadline": "2026-10-23T12:00:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    },
+    {
+      "rank": 8,
+      "jobId": "J03",
+      "criticalityTier": 0,
+      "harmDeadline": "2026-10-26T17:00:00-07:00",
+      "beforeCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "afterCall": {
+        "status": "awaiting_verification",
+        "blocker": "appointment_unverified",
+        "proposedDriverId": null,
+        "nextAction": "call_terminal_to_reconfirm"
+      },
+      "owner": "dispatcher",
+      "dataOrigin": "synthetic"
+    }
+  ]
+}

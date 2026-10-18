@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/generate-seed.mjs",
+    "db:import:generate": "node scripts/import-authoritative-csv.mjs",
+    "fixture:ranking": "node scripts/build-ranking-fixture.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

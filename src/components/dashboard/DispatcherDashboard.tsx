@@ -1,33 +1,58 @@
 "use client";
 
-import { useReducer, useState } from "react";
+import { useReducer, useState, type ReactNode } from "react";
 import { createInitialDemoState, demoReducer, OUTAGE_TERMINAL_ID } from "@/lib/demo/demo-state";
 import { isOutageAffected, isUrgent } from "@/lib/demo/job-status";
-import { CUSTOMERS } from "@/lib/demo/synthetic-data";
 import type { Job, Terminal } from "@/lib/demo/frontend-types";
+import { CUSTOMERS } from "@/lib/demo/synthetic-data";
+import { formatTime } from "@/lib/demo/time";
+import type { StateResponse } from "@/lib/shared/api-contract";
 import { AccessGate } from "./AccessGate";
 import { ActivityLog } from "./ActivityLog";
 import { BackendQueuePanel } from "./BackendQueuePanel";
 import { ContinuityStrip, type ContinuityPhase } from "./ContinuityStrip";
 import { DriverCheckIn } from "./DriverCheckInForm";
 import { DriverPanel } from "./DriverPanel";
+import { LiveDataBadge } from "./LiveDataBadge";
+import { LiveDriverPanel } from "./LiveDriverPanel";
+import { LivePortalAlerts, LiveSidebar } from "./LiveSidebar";
+import { LiveShipmentTable } from "./LiveShipmentTable";
+import { LiveSummaryCards } from "./LiveSummaryCards";
 import { ReconciliationView } from "./ReconciliationView";
 import { RecoveryPanel } from "./RecoveryPanel";
 import { ShipmentTable } from "./ShipmentTable";
 import { Sidebar } from "./Sidebar";
+import { formatSnapshotDate } from "./snapshot-display";
 import { SummaryCards } from "./SummaryCards";
 import { SyntheticBadge } from "./ui";
+import { useLiveBackend } from "./LiveBackendContext";
 
 /**
- * Dispatcher dashboard backed entirely by local synthetic state. To connect a
- * backend later, replace `demoReducer` dispatches with data-layer calls and
- * keep the presentational components unchanged.
+ * Dispatcher dashboard. A live session shows the GET /api/state snapshot.
+ * Without one, the local synthetic reducer is unchanged.
  */
 export function DispatcherDashboard() {
+  const live = useLiveBackend();
   const [state, dispatch] = useReducer(demoReducer, undefined, createInitialDemoState);
   // Remounts the check-in form so a reset also clears its local fields.
   const [resetCount, setResetCount] = useState(0);
   const [showReconciliation, setShowReconciliation] = useState(false);
+
+  if (live.status === "authenticated") {
+    return (
+      <ConnectedDashboard
+        snapshot={live.snapshot}
+        checkIn={
+          live.snapshot ? (
+            <DriverCheckIn
+              localDrivers={state.drivers}
+              onLocalSubmit={(input) => dispatch({ type: "driver-check-in", ...input })}
+            />
+          ) : null
+        }
+      />
+    );
+  }
 
   const outageTerminal = state.terminals.find((t) => t.id === OUTAGE_TERMINAL_ID);
   const affectedJobs = state.jobs.filter(isOutageAffected).length;
@@ -131,6 +156,47 @@ export function DispatcherDashboard() {
             </div>
           </>
         )}
+      </main>
+    </div>
+  );
+}
+
+function ConnectedDashboard({ snapshot, checkIn }: { snapshot: StateResponse | null; checkIn: ReactNode }) {
+  return (
+    <div className="flex min-h-screen bg-slate-100">
+      <LiveSidebar snapshot={snapshot} />
+      <main className="min-w-0 flex-1 px-8 py-6">
+        <header className="mb-5 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dispatcher dashboard</h1>
+            <p className="text-sm text-slate-500">Port drayage recovery — fictional terminals, customers and drivers</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {snapshot?.now
+                ? `Simulated clock ${formatTime(snapshot.now)} · ${formatSnapshotDate(snapshot.now)}`
+                : "Simulated clock not set"}
+              {snapshot?.scenario && ` · Scenario ${snapshot.scenario.id} v${snapshot.scenario.version}`}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <LiveDataBadge />
+            <SyntheticBadge />
+          </div>
+        </header>
+
+        {snapshot && <LivePortalAlerts snapshot={snapshot} />}
+
+        <BackendQueuePanel />
+        <LiveSummaryCards snapshot={snapshot} />
+
+        <div className="mt-5 grid grid-cols-12 gap-5">
+          <div className="col-span-8 min-w-0">
+            <LiveShipmentTable snapshot={snapshot} />
+          </div>
+          <div className="col-span-4 flex min-w-0 flex-col gap-5">
+            <LiveDriverPanel snapshot={snapshot}>{checkIn}</LiveDriverPanel>
+            {snapshot && <ActivityLog events={snapshot.events} />}
+          </div>
+        </div>
       </main>
     </div>
   );

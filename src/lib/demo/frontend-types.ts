@@ -50,6 +50,12 @@ export interface Appointment extends AppointmentSnapshot {
 
 export type HoldType = "customs" | "freight" | "usda";
 
+/**
+ * Criticality tier: 3 government-designated, 2 third-party verified,
+ * 1 self-declared, 0 none stated.
+ */
+export type CriticalityTier = 0 | 1 | 2 | 3;
+
 export interface DispatcherApproval {
   driverId: string;
   approvedAt: IsoLocal;
@@ -69,6 +75,11 @@ export interface Job {
   holds: HoldType[];
   requiredEquipment: EquipmentType;
   approval: DispatcherApproval | null;
+  tier?: CriticalityTier;
+  /** What happens to the receiver if this move is late. */
+  consequence?: string;
+  /** When delay starts causing real harm; may be earlier than `deadline`. */
+  harmDeadline?: IsoLocal;
 }
 
 export type DriverAvailability = "available" | "on-job" | "off-duty" | "unreachable";

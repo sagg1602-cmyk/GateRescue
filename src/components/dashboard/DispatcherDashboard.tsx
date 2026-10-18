@@ -95,6 +95,7 @@ export function DispatcherDashboard() {
                   drivers={state.drivers}
                   customers={CUSTOMERS}
                   inputsVersion={state.inputsVersion}
+                  now={state.now}
                   onGenerate={() => dispatch({ type: "generate-plan" })}
                   onApprove={(jobId) => dispatch({ type: "approve-assignment", jobId })}
                 />

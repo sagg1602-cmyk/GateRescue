@@ -11,6 +11,7 @@ import type {
 } from "@/lib/demo/frontend-types";
 import { getJobStatus, type Tone } from "@/lib/demo/job-status";
 import { sortJobsForPlanning } from "@/lib/demo/recovery-heuristic";
+import { compareIso } from "@/lib/shared/datetime";
 import { formatTime } from "@/lib/demo/time";
 import { Badge, Button, Panel, SyntheticBadge } from "./ui";
 
@@ -85,7 +86,7 @@ function csvField(value: string): string {
 /** Oldest activity first, then each job's final state. No network call. */
 export function buildEvidenceCsv(events: ActivityEvent[], jobs: Job[], drivers: Driver[]): string {
   const driversById = new Map(drivers.map((driver) => [driver.id, driver.name]));
-  const chronological = [...events].sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
+  const chronological = [...events].sort((a, b) => compareIso(a.at, b.at) || a.id - b.id);
   const eventRows = chronological.map((event) =>
     [formatTime(event.at), event.kind, event.severity, event.message].map(csvField).join(","),
   );
@@ -214,7 +215,7 @@ export function ReconciliationView({
     },
   );
 
-  const chronological = [...events].sort((a, b) => a.at.localeCompare(b.at) || a.id - b.id);
+  const chronological = [...events].sort((a, b) => compareIso(a.at, b.at) || a.id - b.id);
   const situation = situationSentence(terminal, unresolved.length, hadOutage);
 
   return (

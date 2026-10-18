@@ -4,7 +4,9 @@ import { useReducer, useState } from "react";
 import { createInitialDemoState, demoReducer, OUTAGE_TERMINAL_ID } from "@/lib/demo/demo-state";
 import { isOutageAffected, isUrgent } from "@/lib/demo/job-status";
 import { CUSTOMERS } from "@/lib/demo/synthetic-data";
+import type { Job, Terminal } from "@/lib/demo/frontend-types";
 import { ActivityLog } from "./ActivityLog";
+import { ContinuityStrip, type ContinuityPhase } from "./ContinuityStrip";
 import { DriverCheckInForm } from "./DriverCheckInForm";
 import { DriverPanel } from "./DriverPanel";
 import { ReconciliationView } from "./ReconciliationView";
@@ -46,6 +48,7 @@ export function DispatcherDashboard() {
       />
 
       <main className="min-w-0 flex-1 px-8 py-6">
+        <ContinuityStrip phase={continuityPhase(outageTerminal, state.jobs)} />
         {showReconciliation ? (
           <ReconciliationView
             terminals={state.terminals}
@@ -125,4 +128,13 @@ export function DispatcherDashboard() {
       </main>
     </div>
   );
+}
+
+/** The reducer returns the terminal to online once reconciliation completes; pre-outage snapshots remain until reset. */
+function continuityPhase(terminal: Terminal | undefined, jobs: Job[]): ContinuityPhase {
+  const hadOutage = jobs.some((j) => j.appointment.preOutage !== null);
+  const unverified = jobs.some((j) => j.terminalId === terminal?.id && j.appointment.status === "unverified");
+  if (terminal?.portalStatus === "outage") return "degraded";
+  if (terminal?.portalStatus === "reconciling") return unverified ? "reconcile" : "restored";
+  return hadOutage ? "restored" : "normal";
 }

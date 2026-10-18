@@ -15,7 +15,7 @@ approval. All data in this repository is **synthetic**.
 
 - **Dashboard** (`/`): runs entirely on built-in local synthetic data
   (`src/lib/demo/`). Not yet connected to the API.
-- **Backend foundation** (branch `backend/foundation`, not merged):
+- **Backend foundation** (merged into `main`):
   `GET /api/state`, `POST /api/driver-reports`, demo session endpoints,
   Supabase schema with RLS, server-only database access.
   Contract: [docs/backend-contract.md](docs/backend-contract.md).

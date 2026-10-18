@@ -14,7 +14,7 @@ import type {
 import { TierBadge } from "./JobBadges";
 import { useLiveBackend } from "./LiveBackendContext";
 import { humanizeCode, needsDriverReport } from "./snapshot-display";
-import { Badge, Button, JumpLink, Panel } from "./ui";
+import { Badge, Button, JumpLink, Panel, Skeleton } from "./ui";
 
 const STATUS_CHIP: Record<RecoveryStatus, { label: string; tone: Tone }> = {
   ready_for_approval: { label: "Ready for approval", tone: "teal" },
@@ -32,10 +32,22 @@ const CHECK_RESULT_LABEL: Record<RecoveryCheck["result"], string> = { pass: "Pas
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Oct 20 · 08:00" in the timestamp's own offset; harm deadlines can fall on later days. */
-function formatDateTime(iso: string): string {
-  return `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))} · ${formatTime(iso)}`;
+/** "Oct 20" in the timestamp's own offset; harm deadlines can fall on later days. */
+function formatDate(iso: string): string {
+  return `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))}`;
 }
+
+/** "Oct 20 · 08:00". */
+function formatDateTime(iso: string): string {
+  return `${formatDate(iso)} · ${formatTime(iso)}`;
+}
+
+/** Slim vertical urgency bar beside the rank numeral. The status badge in the row carries the text label. */
+const STATUS_BAR: Record<RecoveryStatus, string> = {
+  ready_for_approval: "bg-ready",
+  awaiting_verification: "bg-awaiting",
+  blocked: "bg-blocked",
+};
 
 const POLL_INTERVAL_MS = 5_000;
 const HIGHLIGHT_MS = 6_000;
@@ -162,11 +174,7 @@ export function BackendQueuePanel() {
         </p>
       )}
 
-      {!snapshot && loading && (
-        <p role="status" className="px-6 py-10 text-center text-sm text-ink-muted">
-          Loading recovery queue…
-        </p>
-      )}
+      {!snapshot && loading && <QueueSkeleton />}
 
       {snapshot && !queue && (
         <p className="px-6 py-10 text-center text-sm text-ink-muted">
@@ -176,11 +184,16 @@ export function BackendQueuePanel() {
       )}
 
       {queue && queue.entries.length === 0 && (
-        <p className="px-6 py-10 text-center text-sm text-ink-muted">No jobs in the recovery queue.</p>
+        <div className="px-6 py-14 text-center">
+          <p className="font-display text-2xl font-semibold tracking-tight text-navy">Nothing needs recovery right now</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
+            New driver reports and terminal changes show up here within 5 seconds. Nothing is dispatched from this screen.
+          </p>
+        </div>
       )}
 
       {queue && queue.entries.length > 0 && (
-        <ol className={`max-h-[32rem] divide-y divide-line overflow-y-auto ${loading ? "opacity-60" : ""}`}>
+        <ol className={`divide-y divide-line transition-opacity ${loading ? "opacity-60" : ""}`}>
           {[...queue.entries]
             .sort((a, b) => a.rank - b.rank)
             .map((entry) => (
@@ -240,7 +253,7 @@ function LiveIndicator({ visible, failing, updatedAt }: { visible: boolean; fail
   const state = failing
     ? { label: "Update failed", dot: "bg-amber-500", text: "text-awaiting" }
     : visible
-      ? { label: "Live", dot: "bg-ready animate-pulse", text: "text-ready" }
+      ? { label: "Live", dot: "bg-ready live-pulse", text: "text-ready" }
       : { label: "Paused", dot: "bg-ink-muted", text: "text-ink-muted" };
   return (
     <span className="flex items-center gap-2 text-xs">
@@ -280,66 +293,79 @@ function QueueEntry({
   return (
     <li
       id={`queue-${entry.jobId}`}
-      className={`px-6 py-5 transition-colors duration-700 ${
+      className={`px-4 py-6 transition-colors duration-500 md:px-6 ${
         change
           ? "bg-awaiting-soft shadow-[inset_4px_0_0_0_var(--color-awaiting)]"
           : ready
             ? "bg-ready-soft shadow-[inset_4px_0_0_0_var(--color-ready)]"
-            : ""
+            : "hover:bg-paper/70"
       }`}
     >
       {change && (
-        <p className="mb-2 ml-11 text-xs font-semibold text-awaiting">
+        <p className="mb-3 text-xs font-semibold text-awaiting">
           Status changed: {STATUS_CHIP[change.from].label} → {STATUS_CHIP[change.to].label}
         </p>
       )}
-      <div className="flex items-start gap-4">
-        <span className="mt-0.5 w-7 shrink-0 text-right font-mono text-sm font-semibold text-ink-muted">
-          #{entry.rank}
-        </span>
+      <div className="flex gap-4 md:gap-6">
+        {/* Rank numeral and a slim urgency bar coloured by status. The status badge beside the id carries the text. */}
+        <div className="flex shrink-0 flex-col items-center gap-3">
+          <span className="font-display text-3xl font-semibold leading-none tracking-tight tabular-nums text-rust md:text-4xl">
+            #{entry.rank}
+          </span>
+          <span className={`w-1 flex-1 rounded-full ${STATUS_BAR[entry.status]}`} aria-hidden />
+        </div>
+
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="min-w-0 text-sm text-navy">
-              <span className="font-mono font-semibold">{entry.jobId}</span>
-              {job && <span className="ml-2 font-mono text-xs text-ink-muted">{job.container}</span>}
-              <span className="ml-2 text-slate-700">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-lg font-semibold tracking-tight text-navy">{entry.jobId}</span>
+                <span title={entry.status}>
+                  <Badge tone={chip.tone} solid={ready}>
+                    {ready && <span aria-hidden>✓</span>}
+                    {chip.label}
+                  </Badge>
+                </span>
+                {entry.criticalityTier === null ? (
+                  <Badge>Tier unknown</Badge>
+                ) : (
+                  <TierBadge tier={entry.criticalityTier} />
+                )}
+              </div>
+
+              <p className="mt-3 text-base text-navy">
+                <span className="eyebrow mr-2 text-rust">Next action</span>
+                <span className="font-semibold">{humanizeCode(entry.nextAction)}</span>
+              </p>
+
+              <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+                {job && <span className="font-mono">{job.container}</span>}
+                {job && <span> · </span>}
                 {job?.cargoDescription ?? "Cargo not stated"}
-                <span className="text-ink-muted"> · </span>
+                <span> · </span>
                 {customer?.name ?? job?.customerId ?? "Unknown customer"}
-              </span>
-            </p>
-            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-              {entry.criticalityTier === null ? (
-                <Badge>Tier unknown</Badge>
-              ) : (
-                <TierBadge tier={entry.criticalityTier} />
-              )}
-              <span title={entry.status}>
-                <Badge tone={chip.tone} solid={ready}>
-                  {ready && <span aria-hidden>✓</span>}
-                  {chip.label}
-                </Badge>
-              </span>
+                <span> · </span>
+                Blocker:{" "}
+                <span className={entry.blocker ? "font-semibold text-blocked" : "text-navy"}>
+                  {entry.blocker ? humanizeCode(entry.blocker) : "none"}
+                </span>
+                <span> · </span>
+                Resolved by <span className="text-navy">{humanizeCode(entry.owner).toLowerCase()}</span>
+              </p>
+            </div>
+
+            {/* Harm deadline: the most prominent data point in the row. */}
+            <div className="shrink-0 sm:text-right">
+              <p className="eyebrow text-ink-muted">Harm deadline</p>
+              <p className="mt-1 font-mono text-3xl font-medium leading-none tracking-tight tabular-nums text-navy md:text-4xl">
+                {formatTime(entry.harmDeadline)}
+              </p>
+              <p className="mt-1.5 font-mono text-xs text-ink-muted">{formatDate(entry.harmDeadline)}</p>
             </div>
           </div>
 
-          <p className="mt-2 text-sm text-navy">
-            <span className="eyebrow mr-2 text-rust">Next action</span>
-            <span className="font-semibold">{humanizeCode(entry.nextAction)}</span>
-          </p>
-
-          <dl className="mt-2 grid grid-cols-3 gap-x-4 gap-y-1 text-xs">
-            <Field
-              label="Blocker"
-              value={entry.blocker ? humanizeCode(entry.blocker) : "None"}
-              tone={entry.blocker ? "text-blocked" : undefined}
-            />
-            <Field label="Who resolves it" value={humanizeCode(entry.owner)} />
-            <Field label="Harm deadline" value={formatDateTime(entry.harmDeadline)} mono />
-          </dl>
-
           {needsDriverReport(entry.nextAction) && (
-            <div className="mt-2">
+            <div className="mt-3">
               <JumpLink href="#driver-report">Record driver report →</JumpLink>
             </div>
           )}
@@ -394,11 +420,22 @@ function QueueEntry({
   );
 }
 
-function Field({ label, value, tone, mono = false }: { label: string; value: string; tone?: string; mono?: boolean }) {
+/** Placeholder rows shown before the first snapshot arrives. */
+function QueueSkeleton() {
   return (
-    <div className="min-w-0">
-      <dt className="text-ink-muted">{label}</dt>
-      <dd className={`font-medium ${mono ? "font-mono" : ""} ${tone ?? "text-navy"}`}>{value}</dd>
+    <div role="status" className="divide-y divide-line">
+      <span className="sr-only">Loading recovery queue…</span>
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex gap-6 px-6 py-6">
+          <Skeleton className="h-9 w-10" />
+          <div className="flex-1 space-y-3">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-72 max-w-full" />
+            <Skeleton className="h-3 w-full max-w-xl" />
+          </div>
+          <Skeleton className="hidden h-10 w-24 sm:block" />
+        </div>
+      ))}
     </div>
   );
 }

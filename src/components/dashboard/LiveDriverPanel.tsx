@@ -13,7 +13,7 @@ import {
   unknownReason,
   type ListedDriverReport,
 } from "./snapshot-display";
-import { Badge, Panel } from "./ui";
+import { Badge, Panel, Skeleton } from "./ui";
 
 /** Driver roster from the backend snapshot, including the latest stored report when the response has one. */
 export function LiveDriverPanel({ snapshot, children }: { snapshot: StateResponse | null; children?: ReactNode }) {
@@ -26,9 +26,15 @@ export function LiveDriverPanel({ snapshot, children }: { snapshot: StateRespons
     >
       {children}
       {!snapshot && (
-        <p role="status" className="px-6 py-10 text-center text-sm text-ink-muted">
-          Loading drivers…
-        </p>
+        <div role="status" className="divide-y divide-line">
+          <span className="sr-only">Loading drivers…</span>
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="space-y-3 px-6 py-5">
+              <Skeleton className="h-4 w-36" />
+              <Skeleton className="h-3 w-52 max-w-full" />
+            </div>
+          ))}
+        </div>
       )}
       {snapshot && snapshot.drivers.length === 0 && (
         <p className="px-6 py-10 text-center text-sm text-ink-muted">No drivers in the snapshot.</p>

@@ -3,7 +3,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { ApiRequestError, startDemoSession } from "@/lib/api/client";
 import { useLiveBackend } from "./LiveBackendContext";
-import { Button, Panel } from "./ui";
+import { Button, Panel, Skeleton } from "./ui";
 
 /**
  * Guards live-backend content. Renders `children` only with a valid demo
@@ -17,9 +17,10 @@ export function AccessGate({ children }: { children: ReactNode }) {
 
   if (status === "checking") {
     return (
-      <p role="status" className="rounded-card border border-line bg-white px-6 py-4 text-sm text-ink-muted">
-        Checking the live backend…
-      </p>
+      <div role="status" className="flex items-center gap-4 rounded-card border border-line bg-white px-6 py-4 shadow-card">
+        <Skeleton className="h-4 w-40" />
+        <span className="text-sm text-ink-muted">Checking the live backend…</span>
+      </div>
     );
   }
 

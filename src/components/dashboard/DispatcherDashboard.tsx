@@ -63,7 +63,7 @@ export function DispatcherDashboard() {
     state.plan?.recommendations.filter((r) => r.category === "ready" && !r.approved).length ?? null;
 
   return (
-    <div className="flex min-h-screen bg-paper">
+    <div className="flex min-h-screen flex-col bg-paper lg:flex-row">
       <Sidebar
         now={state.now}
         terminals={state.terminals}
@@ -78,7 +78,7 @@ export function DispatcherDashboard() {
         }}
       />
 
-      <main className="min-w-0 flex-1 px-10 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 lg:px-10 lg:py-8">
         <ContinuityStrip phase={continuityPhase(outageTerminal, state.jobs)} />
         {showReconciliation ? (
           <ReconciliationView
@@ -107,7 +107,7 @@ export function DispatcherDashboard() {
               </div>
             )}
 
-            <NextStepBanner step={localNextStep({ outageTerminal, plan: state.plan, jobs: state.jobs })} />
+            <NextStepBanner step={localNextStep({ outageTerminal, plan: state.plan, jobs: state.jobs, customers: CUSTOMERS })} />
 
             <SummaryCards
               readyForApproval={readyForApproval}
@@ -125,8 +125,8 @@ export function DispatcherDashboard() {
               </AccessGate>
             </div>
 
-            <div className="mt-6 grid grid-cols-12 gap-6">
-              <div className="col-span-8 flex min-w-0 flex-col gap-6">
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+              <div className="lg:col-span-8 flex min-w-0 flex-col gap-6">
                 <RecoveryPanel
                   plan={state.plan}
                   jobs={state.jobs}
@@ -147,7 +147,7 @@ export function DispatcherDashboard() {
                   onMarkLost={(jobId) => dispatch({ type: "mark-appointment-lost", jobId })}
                 />
               </div>
-              <div className="col-span-4 flex min-w-0 flex-col gap-6">
+              <div className="lg:col-span-4 flex min-w-0 flex-col gap-6">
                 <DriverPanel drivers={state.drivers} now={state.now}>
                   <DriverCheckIn
                     key={resetCount}
@@ -167,9 +167,9 @@ export function DispatcherDashboard() {
 
 function ConnectedDashboard({ snapshot, checkIn }: { snapshot: StateResponse | null; checkIn: ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-paper">
+    <div className="flex min-h-screen flex-col bg-paper lg:flex-row">
       <LiveSidebar snapshot={snapshot} />
-      <main className="min-w-0 flex-1 px-10 py-8">
+      <main className="min-w-0 flex-1 px-4 py-6 md:px-8 lg:px-10 lg:py-8">
         <DashboardHeader
           badges={
             <>
@@ -206,11 +206,11 @@ function ConnectedDashboard({ snapshot, checkIn }: { snapshot: StateResponse | n
           <BackendQueuePanel />
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
-          <div className="col-span-8 min-w-0">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8 min-w-0">
             <LiveShipmentTable snapshot={snapshot} />
           </div>
-          <div className="col-span-4 flex min-w-0 flex-col gap-6">
+          <div className="lg:col-span-4 flex min-w-0 flex-col gap-6">
             <LiveDriverPanel snapshot={snapshot}>{checkIn}</LiveDriverPanel>
             {snapshot && <ActivityLog events={snapshot.events} />}
           </div>
@@ -225,7 +225,7 @@ function DashboardHeader({ badges, meta }: { badges: ReactNode; meta?: ReactNode
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         <p className="eyebrow text-rust">Port drayage recovery</p>
-        <h1 className="mt-2 font-display text-5xl font-semibold leading-none tracking-tight text-navy">
+        <h1 className="mt-2 font-display text-4xl font-semibold leading-none md:text-5xl tracking-tight text-navy">
           Dispatcher dashboard
         </h1>
         <p className="mt-2 text-sm text-ink-muted">Fictional terminals, customers and drivers</p>

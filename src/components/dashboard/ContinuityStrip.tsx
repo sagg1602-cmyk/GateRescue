@@ -35,7 +35,7 @@ export function ContinuityStrip({ phase }: { phase: ContinuityPhase }) {
   const currentIndex = PHASES.findIndex((p) => p.id === phase);
   return (
     <nav aria-label="Continuity phase" className="mb-6">
-      <ol className="grid grid-cols-4 gap-2">
+      <ol className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {PHASES.map((step, index) => {
           const isCurrent = index === currentIndex;
           const isPast = index < currentIndex;

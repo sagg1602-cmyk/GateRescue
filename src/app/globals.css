@@ -9,6 +9,7 @@
   --color-line: #d9d7cf;
   --color-ink-muted: #5b6270;
   --color-rust: #b5481f;
+  --color-rust-light: #f0a27f;
   --color-ready: #1f6f80;
   --color-ready-soft: #e4f0f2;
   --color-awaiting: #7a5200;
@@ -19,7 +20,13 @@
   --color-tile-teal: #2f7f93;
   --color-tile-slate: #3a5078;
 
-  --radius-card: 10px;
+  /* One radius everywhere. */
+  --radius-card: 12px;
+
+  /* Shadow scale: resting and hover. Navy-tinted so it sits on the off-white paper. */
+  --shadow-card: 0 1px 2px rgb(15 29 51 / 0.05), 0 1px 0 rgb(15 29 51 / 0.02);
+  --shadow-card-hover: 0 10px 28px -14px rgb(15 29 51 / 0.22), 0 2px 4px rgb(15 29 51 / 0.05);
+  --shadow-glow: 0 0 0 6px rgb(31 111 128 / 0.22), 0 18px 48px -16px rgb(31 111 128 / 0.55);
 }
 
 @theme inline {
@@ -37,18 +44,89 @@
   text-transform: uppercase;
 }
 
+/* Hero banner: content slides in when the next step changes. */
+@utility hero-in {
+  animation: hero-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Hero banner: one-time soft teal glow after a change. */
+@utility hero-glow {
+  animation: hero-glow 1400ms ease-out 1 both;
+}
+
+/* Live indicator dot: a soft expanding ring. */
+@utility live-pulse {
+  animation: live-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Loading placeholder shimmer. */
+@utility skeleton {
+  background: linear-gradient(90deg, var(--color-paper-deep) 25%, #f6f4ef 50%, var(--color-paper-deep) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgb(31 111 128 / 0);
+  }
+  25% {
+    box-shadow: var(--shadow-glow);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(31 111 128 / 0);
+  }
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(31 111 128 / 0.45);
+  }
+  70% {
+    box-shadow: 0 0 0 7px rgb(31 111 128 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(31 111 128 / 0);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;
   }
 
+  /* Off-white paper with a faint 1px grid (about 4% navy), so panels sit on a drafting surface. */
   body {
-    background: var(--color-paper);
+    background-color: var(--color-paper);
+    background-image:
+      linear-gradient(to right, rgb(15 29 51 / 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(15 29 51 / 0.04) 1px, transparent 1px);
+    background-size: 32px 32px;
     color: var(--color-navy);
     font-family: var(--font-sans);
   }
 
-  /* Dark surfaces set --focus-ring to a light colour. */
+  /* 2px teal ring, 2px offset. Dark surfaces set --focus-ring to a light colour. */
   :focus-visible {
     outline: 2px solid var(--focus-ring, var(--color-ready));
     outline-offset: 2px;

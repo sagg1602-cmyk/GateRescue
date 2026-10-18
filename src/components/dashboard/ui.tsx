@@ -89,7 +89,10 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <section id={id} className={`rounded-card border border-line bg-white ${className}`}>
+    <section
+      id={id}
+      className={`rounded-card border border-line bg-white shadow-card transition-shadow hover:shadow-card-hover ${className}`}
+    >
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-line px-6 py-5">
         <div className="min-w-0">
           {eyebrow && <p className="eyebrow mb-1.5 text-rust">{eyebrow}</p>}
@@ -129,6 +132,37 @@ export function Button({
         size === "sm" ? "px-3.5 text-xs" : "px-5 text-sm"
       } ${BUTTON_VARIANTS[variant]} ${className}`}
     />
+  );
+}
+
+/** Shimmering placeholder block shown while data loads. Decorative: pair it with sr-only status text. */
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <span aria-hidden className={`skeleton block rounded-md ${className}`} />;
+}
+
+const LIGHT_CLASSES = {
+  ready: { dot: "bg-teal-300 ring-teal-300/20", text: "text-teal-100" },
+  awaiting: { dot: "bg-amber-300 ring-amber-300/20", text: "text-amber-100" },
+  blocked: { dot: "bg-red-400 ring-red-400/25", text: "text-red-100" },
+  muted: { dot: "bg-slate-400 ring-slate-400/20", text: "text-slate-300" },
+} as const;
+
+/** Small status light with a text label, for the navy sidebar. The label always carries the meaning. */
+export function StatusLight({
+  tone,
+  label,
+  pulse = false,
+}: {
+  tone: keyof typeof LIGHT_CLASSES;
+  label: string;
+  pulse?: boolean;
+}) {
+  const light = LIGHT_CLASSES[tone];
+  return (
+    <span className={`inline-flex items-center gap-2.5 text-xs font-medium ${light.text}`}>
+      <span className={`h-2 w-2 shrink-0 rounded-full ring-4 ${light.dot} ${pulse ? "animate-pulse" : ""}`} aria-hidden />
+      {label}
+    </span>
   );
 }
 

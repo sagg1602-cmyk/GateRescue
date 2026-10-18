@@ -105,7 +105,7 @@ export function RecoveryPanel({
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {GROUPS.map((group) => {
               const recs = plan.recommendations.filter((r) => r.category === group.category);
               const ready = group.category === "ready";

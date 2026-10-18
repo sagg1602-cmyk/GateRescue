@@ -1,48 +1,114 @@
-import type { Job, RecoveryPlan, Terminal } from "@/lib/demo/frontend-types";
+"use client";
+
+import { useState } from "react";
+import type { Customer, Job, RecoveryPlan, Terminal } from "@/lib/demo/frontend-types";
 import type { StateResponse } from "@/lib/shared/api-contract";
 import { humanizeCode, needsDriverReport, RECOVERY_STATUS_LABEL } from "./snapshot-display";
-import { JumpLink } from "./ui";
 
 interface Step {
   title: string;
   detail: string;
-  /** Primary jump link to the place on the page where the step is done. */
+  /** Job id and customer, set in mono under the headline. */
+  subject?: { id: string; label?: string };
+  /** The one dominant button; jumps to the place on the page where the step is done. */
   action?: { href: string; label: string };
   tone: "ready" | "attention" | "neutral";
 }
 
-const TONE_CLASSES: Record<Step["tone"], { box: string; eyebrow: string }> = {
-  ready: { box: "border-ready bg-ready text-white", eyebrow: "text-white" },
-  attention: { box: "border-line bg-navy text-white", eyebrow: "text-[#f0a27f]" },
-  neutral: { box: "border-line bg-white text-navy", eyebrow: "text-rust" },
+const TONE_CLASSES: Record<
+  Step["tone"],
+  { box: string; eyebrow: string; rule: string; detail: string; mono: string; button: string; link: string }
+> = {
+  ready: {
+    box: "border-ready bg-ready text-white",
+    eyebrow: "text-white/80",
+    rule: "bg-rust-light",
+    detail: "text-white/85",
+    mono: "text-white",
+    button: "bg-white text-ready hover:bg-ready-soft",
+    link: "text-white/85 hover:text-white",
+  },
+  attention: {
+    box: "border-navy bg-navy text-white",
+    eyebrow: "text-rust-light",
+    rule: "bg-rust",
+    detail: "text-slate-300",
+    mono: "text-rust-light",
+    button: "bg-white text-navy hover:bg-paper",
+    link: "text-slate-300 hover:text-white",
+  },
+  neutral: {
+    box: "border-line bg-white text-navy",
+    eyebrow: "text-rust",
+    rule: "bg-rust",
+    detail: "text-ink-muted",
+    mono: "text-rust",
+    button: "bg-navy text-white hover:bg-navy-soft",
+    link: "text-ink-muted hover:text-navy",
+  },
 };
 
-/** Answers "what do I do next?" at the top of the dashboard. Display only: links jump to existing controls. */
+/**
+ * Answers "what do I do next?" at the top of the dashboard. Display only: the
+ * button jumps to existing controls. When the step changes the content slides
+ * in and the card glows once; both respect prefers-reduced-motion via globals.css.
+ */
 export function NextStepBanner({ step }: { step: Step }) {
   const tone = TONE_CLASSES[step.tone];
   const onDark = step.tone !== "neutral";
+
+  // Adjust-state-during-render: remember the first title so the glow only runs on a change, not on load.
+  const [seenTitle, setSeenTitle] = useState(step.title);
+  const [changed, setChanged] = useState(false);
+  if (seenTitle !== step.title) {
+    setSeenTitle(step.title);
+    setChanged(true);
+  }
+
   return (
     <section
+      key={step.title}
       aria-labelledby="next-step-title"
-      className={`mb-6 flex flex-wrap items-center justify-between gap-4 rounded-card border px-6 py-5 [--focus-ring:#ffffff] ${tone.box}`}
+      className={`relative mb-8 overflow-hidden rounded-card border px-6 py-8 shadow-card md:px-10 md:py-10 ${tone.box} ${
+        changed ? "hero-glow" : ""
+      } ${onDark ? "[--focus-ring:#ffffff]" : ""}`}
     >
-      <div className="min-w-0 flex-1">
-        <p className={`eyebrow ${tone.eyebrow}`}>Next step</p>
-        <h2 id="next-step-title" className="mt-1.5 font-display text-2xl font-semibold leading-tight tracking-tight">
-          {step.title}
-        </h2>
-        <p className={`mt-1 text-sm ${onDark ? "text-white/90" : "text-ink-muted"}`}>{step.detail}</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="hero-in flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <p className={`eyebrow ${tone.eyebrow}`}>Next step</p>
+          <span className={`mt-3 block h-px w-14 ${tone.rule}`} aria-hidden />
+          <h2
+            id="next-step-title"
+            className="mt-5 max-w-4xl font-display text-4xl font-semibold leading-[0.95] tracking-tight text-balance md:text-6xl"
+          >
+            {step.title}
+          </h2>
+          {step.subject && (
+            <p className={`mt-4 font-mono text-sm tracking-tight md:text-base ${tone.mono}`}>
+              <span className="font-semibold">{step.subject.id}</span>
+              {step.subject.label && <span className="opacity-80"> · {step.subject.label}</span>}
+            </p>
+          )}
+          <p className={`mt-3 max-w-2xl text-sm leading-relaxed md:text-base ${tone.detail}`}>{step.detail}</p>
+        </div>
+
         {step.action && (
-          <JumpLink href={step.action.href} onDark={onDark}>
-            {step.action.label}
-          </JumpLink>
-        )}
-        {step.action && step.action.href !== "#driver-report" && (
-          <JumpLink href="#driver-report" onDark={onDark}>
-            Record driver report
-          </JumpLink>
+          <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
+            <a
+              href={step.action.href}
+              className={`inline-flex min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold shadow-card transition-colors ${tone.button}`}
+            >
+              {step.action.label}
+            </a>
+            {step.action.href !== "#driver-report" && (
+              <a
+                href="#driver-report"
+                className={`inline-flex min-h-11 items-center text-xs font-medium underline underline-offset-4 ${tone.link}`}
+              >
+                Record a driver report instead
+              </a>
+            )}
+          </div>
         )}
       </div>
     </section>
@@ -54,10 +120,12 @@ export function localNextStep({
   outageTerminal,
   plan,
   jobs,
+  customers,
 }: {
   outageTerminal: Terminal | undefined;
   plan: RecoveryPlan | null;
   jobs: Job[];
+  customers: Customer[];
 }): Step {
   const name = outageTerminal?.shortName ?? "Terminal A";
   const unverified = jobs.filter(
@@ -97,11 +165,14 @@ export function localNextStep({
       tone: "attention",
     };
   }
-  const ready = plan.recommendations.filter((r) => r.category === "ready" && !r.approved).length;
-  if (ready > 0) {
+  const readyRecs = plan.recommendations.filter((r) => r.category === "ready" && !r.approved);
+  if (readyRecs.length > 0) {
+    const first = jobs.find((j) => j.id === readyRecs[0].jobId);
+    const customer = first && customers.find((c) => c.id === first.customerId);
     return {
-      title: `${ready} job${ready === 1 ? " is" : "s are"} ready for approval`,
+      title: `${readyRecs.length} job${readyRecs.length === 1 ? " is" : "s are"} ready for approval`,
       detail: "All checks pass. Review and approve; approval records intent only and dispatches nothing.",
+      subject: first ? { id: first.container, label: customer?.name } : undefined,
       action: { href: "#recovery-plan", label: "Review ready jobs" },
       tone: "ready",
     };
@@ -135,6 +206,10 @@ export function liveNextStep(snapshot: StateResponse | null): Step {
       tone: "neutral",
     };
   }
+  const customerFor = (jobId: string) => {
+    const job = snapshot.jobs.find((j) => j.id === jobId);
+    return job ? snapshot.customers.find((c) => c.id === job.customerId)?.name : undefined;
+  };
   const ready = entries.filter((e) => e.status === "ready_for_approval");
   if (ready.length > 0) {
     const top = ready[0];
@@ -142,6 +217,7 @@ export function liveNextStep(snapshot: StateResponse | null): Step {
     return {
       title: `${top.jobId} is ready for approval${ready.length > 1 ? ` (+${ready.length - 1} more)` : ""}`,
       detail: `${driver ? `Proposed driver ${driver}. ` : ""}Next action: ${humanizeCode(top.nextAction)}. A dispatcher approves every assignment.`,
+      subject: { id: top.jobId, label: customerFor(top.jobId) },
       action: { href: `#queue-${top.jobId}`, label: `Review ${top.jobId}` },
       tone: "ready",
     };
@@ -149,8 +225,9 @@ export function liveNextStep(snapshot: StateResponse | null): Step {
   const top = entries[0];
   const waitingOnDriver = needsDriverReport(top.nextAction);
   return {
-    title: `${top.jobId}: ${humanizeCode(top.nextAction)}`,
+    title: humanizeCode(top.nextAction),
     detail: `${RECOVERY_STATUS_LABEL[top.status]}${top.blocker ? ` · ${humanizeCode(top.blocker)}` : ""} · resolved by ${humanizeCode(top.owner).toLowerCase()}.`,
+    subject: { id: top.jobId, label: customerFor(top.jobId) },
     action: waitingOnDriver
       ? { href: "#driver-report", label: "Record driver report" }
       : { href: `#queue-${top.jobId}`, label: `Review ${top.jobId}` },

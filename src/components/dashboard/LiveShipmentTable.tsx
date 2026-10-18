@@ -3,7 +3,7 @@ import type { Tone } from "@/lib/demo/job-status";
 import type { StateResponse } from "@/lib/shared/api-contract";
 import { TierBadge } from "./JobBadges";
 import { BASIS_LABEL, formatAppointmentWindow, formatSnapshotDateTime, unknownReason } from "./snapshot-display";
-import { Badge, Panel } from "./ui";
+import { Badge, Panel, Skeleton } from "./ui";
 
 const APPOINTMENT_BADGE: Record<AppointmentStatus, { label: string; tone: Tone }> = {
   confirmed: { label: "Confirmed", tone: "teal" },
@@ -27,9 +27,12 @@ export function LiveShipmentTable({ snapshot }: { snapshot: StateResponse | null
       }
     >
       {!snapshot && (
-        <p role="status" className="px-6 py-10 text-center text-sm text-ink-muted">
-          Loading shipments…
-        </p>
+        <div role="status" className="space-y-4 px-6 py-6">
+          <span className="sr-only">Loading shipments…</span>
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-4 w-full" />
+          ))}
+        </div>
       )}
       {snapshot && jobs.length === 0 && (
         <p className="px-6 py-10 text-center text-sm text-ink-muted">No jobs in the snapshot.</p>

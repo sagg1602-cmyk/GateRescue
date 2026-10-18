@@ -9,6 +9,8 @@
 
 import type {
   ActivityEvent,
+  CriticalityBasis,
+  CriticalityTier,
   Customer,
   Driver,
   EquipmentType,
@@ -43,6 +45,13 @@ const AVAILABILITY_FROM_SOURCE = { available: "available", busy: "on-job", not_r
 
 /** Display priority for the dashboard; ranking uses the numeric tier, not this. */
 const PRIORITY_FROM_TIER: Record<string, Priority> = { "3": "critical", "2": "critical", "1": "high", "0": "normal" };
+
+const CRITICALITY_BASES: Record<string, CriticalityBasis> = {
+  government_designated: "government_designated",
+  third_party_verified: "third_party_verified",
+  self_declared: "self_declared",
+  none: "none",
+};
 
 const HOLDS_FROM_SOURCE: Record<string, HoldType[]> = { none: [], customs: ["customs"], freight: ["freight"] };
 
@@ -179,18 +188,18 @@ export function buildScenarioDataset(csv: SourceCsvs, config: ScenarioConfig): S
       customerId: j.customer_id,
       terminalId: err.map(TERMINAL_IDS, j.terminal, `${at} terminal`),
       priority: err.map(PRIORITY_FROM_TIER, String(tier), `${at} criticality_tier`),
+      // The CSV supplies only a harm deadline; it is also used as the delivery deadline.
       deadline: err.iso(j.harm_deadline, `${at} harm_deadline`),
+      harmDeadline: j.harm_deadline,
       appointment: { status: j.appointment_status as "confirmed" | "unverified", window, preOutage: null },
       containerAvailable: tracking.allContainersAvailable ? true : null,
       containerAvailabilityAsOf: tracking.allContainersAvailable ? tracking.snapshotAt : null,
       holds: err.map(HOLDS_FROM_SOURCE, j.hold_type, `${at} hold_type`),
       requiredEquipment: err.map(EQUIPMENT_FROM_SOURCE, j.container_type, `${at} container_type`),
       approval: null,
-      criticality: {
-        tier,
-        basis: j.criticality_basis as NonNullable<Job["criticality"]>["basis"],
-        statedBy: j.criticality_stated_by || null,
-      },
+      tier: tier as CriticalityTier,
+      criticalityBasis: err.map(CRITICALITY_BASES, j.criticality_basis, `${at} criticality_basis`),
+      criticalityStatedBy: j.criticality_stated_by || null,
       originalAssignedDriverId: j.assigned_driver_id || null,
       cargoDescription: j.cargo_description || null,
       lastFreeDay: j.last_free_day || null,

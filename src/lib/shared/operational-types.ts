@@ -108,13 +108,11 @@ export interface DispatcherApproval {
   simulated: true;
 }
 
-export interface JobCriticality {
-  /** 0–3, higher is more critical. Ranking key for the recovery queue. */
-  tier: number;
-  /** Kept separate from the tier: how the criticality claim is supported. */
-  basis: CriticalityBasis;
-  statedBy: string | null;
-}
+/**
+ * Criticality tier: 3 government-designated, 2 third-party verified,
+ * 1 self-declared, 0 none stated. Ranking key for the recovery queue.
+ */
+export type CriticalityTier = 0 | 1 | 2 | 3;
 
 export interface Job {
   id: string;
@@ -122,7 +120,10 @@ export interface Job {
   customerId: string;
   terminalId: TerminalId;
   priority: Priority;
-  /** Harm deadline: latest acceptable completion (full timestamp). */
+  /**
+   * Delivery deadline. When a dataset supplies only a harm deadline (the
+   * scenario CSVs do), this holds the same value as `harmDeadline`.
+   */
   deadline: IsoDateTime;
   appointment: Appointment;
   /** null = unknown. */
@@ -132,7 +133,14 @@ export interface Job {
   holds: HoldType[];
   requiredEquipment: EquipmentType;
   approval: DispatcherApproval | null;
-  criticality?: JobCriticality;
+  tier?: CriticalityTier;
+  /** How the criticality claim is supported; kept separate from the tier. */
+  criticalityBasis?: CriticalityBasis | null;
+  criticalityStatedBy?: string | null;
+  /** What happens to the receiver if this move is late. */
+  consequence?: string;
+  /** When delay starts causing real harm; may be earlier than `deadline`. Ranking and feasibility use it. */
+  harmDeadline?: IsoDateTime;
   /** Driver assigned in the source data. History; the recovery engine decides whether it is still reserved. */
   originalAssignedDriverId?: string | null;
   cargoDescription?: string | null;
@@ -221,7 +229,7 @@ export interface ProposedAssignment {
 export interface RecoveryQueueEntry {
   rank: number;
   jobId: string;
-  criticalityTier: number | null;
+  criticalityTier: CriticalityTier | null;
   criticalityBasis: CriticalityBasis | null;
   harmDeadline: IsoDateTime;
   status: RecoveryStatus;
@@ -295,8 +303,6 @@ export interface OperationalSnapshot {
   drivers: Driver[];
   /** Newest first. */
   events: ActivityEvent[];
-  /** Most recent dashboard plan, or null if none has been generated. */
-  plan: RecoveryPlan | null;
   /** Ranked recovery queue computed by the backend engine; null if it cannot be computed. */
   recoveryQueue: RecoveryQueue | null;
   /** Every null/unknown value in this snapshot, with the reason. */

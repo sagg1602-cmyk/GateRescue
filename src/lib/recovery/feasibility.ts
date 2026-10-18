@@ -5,7 +5,8 @@
  *
  * A trip is: depart (≥ now, ≥ availableFrom) → travel → pickup (inside the
  * appointment window) → reservation of jobReservationMinutes → completion
- * (≤ harm deadline, ≤ availableUntil). The interval [depart, completion)
+ * (≤ harm deadline — or the delivery deadline if no harm deadline — and
+ * ≤ availableUntil). The interval [depart, completion)
  * must not overlap any of the driver's reservations. If the earliest pickup
  * conflicts, later pickups inside the window are tried (after each
  * conflicting reservation ends).
@@ -83,7 +84,7 @@ export function evaluateFeasibility(
   const travelMs = travel * 60_000;
   const earliestPickup = max(max(toEpochMs(ctx.now), toEpochMs(driver.availableFrom)) + travelMs, toEpochMs(window.start));
   const windowEnd = toEpochMs(window.end);
-  const deadline = toEpochMs(job.deadline);
+  const deadline = toEpochMs(job.harmDeadline ?? job.deadline);
   const until = driver.availableUntil ? toEpochMs(driver.availableUntil) : Number.POSITIVE_INFINITY;
   const reservations = driverReservations.map((r) => ({ jobId: r.jobId, start: toEpochMs(r.start), end: toEpochMs(r.end) }));
 

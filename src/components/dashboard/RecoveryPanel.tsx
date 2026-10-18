@@ -7,7 +7,9 @@ import type {
   RecoveryCheck,
   RecoveryPlan,
 } from "@/lib/demo/frontend-types";
+import { getJobExtras } from "@/lib/demo/job-extras";
 import { formatTime, formatWindow } from "@/lib/demo/time";
+import { HarmSoonBadge, TierBadge } from "./JobBadges";
 import { Badge, Button, Panel } from "./ui";
 
 const GROUPS: { category: RecommendationCategory; title: string; description: string; header: string; dot: string }[] = [
@@ -46,6 +48,7 @@ export function RecoveryPanel({
   drivers,
   customers,
   inputsVersion,
+  now,
   onGenerate,
   onApprove,
 }: {
@@ -54,6 +57,7 @@ export function RecoveryPanel({
   drivers: Driver[];
   customers: Customer[];
   inputsVersion: number;
+  now: string;
   onGenerate: () => void;
   onApprove: (jobId: string) => void;
 }) {
@@ -118,6 +122,7 @@ export function RecoveryPanel({
                         job={jobs.find((j) => j.id === rec.jobId)}
                         driver={drivers.find((d) => d.id === rec.driverId)}
                         customers={customers}
+                        now={now}
                         canApprove={!invalidated}
                         onApprove={onApprove}
                       />
@@ -138,6 +143,7 @@ function RecommendationCard({
   job,
   driver,
   customers,
+  now,
   canApprove,
   onApprove,
 }: {
@@ -145,6 +151,7 @@ function RecommendationCard({
   job: Job | undefined;
   driver: Driver | undefined;
   customers: Customer[];
+  now: string;
   canApprove: boolean;
   onApprove: (jobId: string) => void;
 }) {
@@ -163,6 +170,10 @@ function RecommendationCard({
         <Badge tone={job.priority === "critical" ? "red" : job.priority === "high" ? "amber" : "neutral"}>
           {job.priority}
         </Badge>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1">
+        <TierBadge tier={getJobExtras(job).tier} />
+        <HarmSoonBadge job={job} now={now} />
       </div>
       {driver && (
         <p className="mt-2 text-xs text-slate-800">

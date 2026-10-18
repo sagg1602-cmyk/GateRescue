@@ -35,7 +35,8 @@ function job(overrides: Partial<Job> = {}): Job {
     holds: [],
     requiredEquipment: "chassis-40",
     approval: null,
-    criticality: { tier: 1, basis: "self_declared", statedBy: null },
+    tier: 1,
+    criticalityBasis: "self_declared",
     originalAssignedDriverId: null,
     ...overrides,
   };

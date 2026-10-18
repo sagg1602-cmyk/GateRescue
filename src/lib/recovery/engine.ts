@@ -61,10 +61,15 @@ export function isInRecoveryScope(job: Job, config: RecoveryConfig): boolean {
   return affected || unassigned;
 }
 
+/** Harm deadline when known, otherwise the delivery deadline. */
+export function harmDeadlineOf(job: Job): string {
+  return job.harmDeadline ?? job.deadline;
+}
+
 export function compareForRanking(a: Job, b: Job): number {
-  const tierA = a.criticality?.tier ?? -1;
-  const tierB = b.criticality?.tier ?? -1;
-  return tierB - tierA || compareIso(a.deadline, b.deadline) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const tierA = a.tier ?? -1;
+  const tierB = b.tier ?? -1;
+  return tierB - tierA || compareIso(harmDeadlineOf(a), harmDeadlineOf(b)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
 
 export function buildRecoveryQueue(input: RecoveryEngineInput): RecoveryQueue {
@@ -102,9 +107,9 @@ export function buildRecoveryQueue(input: RecoveryEngineInput): RecoveryQueue {
     const base = {
       rank: index + 1,
       jobId: job.id,
-      criticalityTier: job.criticality?.tier ?? null,
-      criticalityBasis: job.criticality?.basis ?? null,
-      harmDeadline: job.deadline,
+      criticalityTier: job.tier ?? null,
+      criticalityBasis: job.criticalityBasis ?? null,
+      harmDeadline: harmDeadlineOf(job),
       originalAssignedDriverId: job.originalAssignedDriverId ?? null,
     };
     const result = (

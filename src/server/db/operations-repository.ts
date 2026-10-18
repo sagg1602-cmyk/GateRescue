@@ -9,7 +9,6 @@ import type {
   DriverReport,
   Job,
   OperationalSnapshot,
-  RecoveryPlan,
   ScenarioInfo,
   Terminal,
   UnknownValue,
@@ -41,15 +40,11 @@ interface JobRow {
   pre_outage_status: AppointmentStatus | null; pre_outage_start: string | null; pre_outage_end: string | null;
   container_available: boolean | null; container_status_as_of: string | null; holds: Job["holds"];
   required_equipment: Job["requiredEquipment"]; approval_driver_id: string | null; approval_at: string | null;
-  criticality_tier: number | null; criticality_basis: NonNullable<Job["criticality"]>["basis"] | null;
+  criticality_tier: Job["tier"] | null; criticality_basis: Job["criticalityBasis"] | null;
   criticality_stated_by: string | null; assigned_driver_id: string | null; cargo_description: string | null;
   last_free_day: string | null;
 }
 interface EventRow { id: number; at: string; kind: ActivityEvent["kind"]; severity: ActivityEvent["severity"]; message: string }
-interface PlanRow {
-  id: number; generated_at: string; inputs_version: number; status: RecoveryPlan["status"];
-  invalidated_reason: string | null; recommendations: RecoveryPlan["recommendations"];
-}
 interface DemoStateRow {
   sim_now: string; inputs_version: number; scenario_id: string | null; scenario_version: number | null; time_zone: string;
 }
@@ -127,9 +122,11 @@ function makeMappers(timeZone: string) {
           row.approval_driver_id && row.approval_at
             ? { driverId: row.approval_driver_id, approvedAt: zoned(row.approval_at), simulated: true }
             : null,
-        ...(row.criticality_tier !== null && row.criticality_basis
-          ? { criticality: { tier: row.criticality_tier, basis: row.criticality_basis, statedBy: row.criticality_stated_by } }
-          : {}),
+        // jobs.deadline holds the harm deadline supplied by the dataset.
+        harmDeadline: zoned(row.deadline),
+        ...(row.criticality_tier !== null ? { tier: row.criticality_tier } : {}),
+        criticalityBasis: row.criticality_basis,
+        criticalityStatedBy: row.criticality_stated_by,
         originalAssignedDriverId: row.assigned_driver_id,
         cargoDescription: row.cargo_description,
         lastFreeDay: row.last_free_day,
@@ -143,16 +140,6 @@ function makeMappers(timeZone: string) {
         contactName: row.contact_name,
         contactPhone: row.contact_phone,
         city: row.city,
-      };
-    },
-    plan(row: PlanRow): RecoveryPlan {
-      return {
-        id: Number(row.id),
-        generatedAt: zoned(row.generated_at),
-        inputsVersion: row.inputs_version,
-        status: row.status,
-        invalidatedReason: row.invalidated_reason,
-        recommendations: row.recommendations,
       };
     },
     report(row: DriverReportRow): DriverReport {
@@ -191,7 +178,7 @@ export function listUnknowns(drivers: Driver[], jobs: Job[], hasClock: boolean):
     if (j.containerAvailable === null) {
       unknowns.push({ entity: "job", id: j.id, field: "containerAvailable", reason: "Not supplied by the dataset" });
     }
-    if (!j.criticality) unknowns.push({ entity: "job", id: j.id, field: "criticality", reason: "Not supplied by the dataset" });
+    if (j.tier === undefined) unknowns.push({ entity: "job", id: j.id, field: "tier", reason: "Not supplied by the dataset" });
   }
   return unknowns;
 }
@@ -216,7 +203,7 @@ export class OperationsRepository implements DriverReportStore {
   }
 
   async getSnapshot(): Promise<OperationalSnapshot> {
-    const [state, terminals, customers, drivers, slots, jobs, events, plans] = await Promise.all([
+    const [state, terminals, customers, drivers, slots, jobs, events] = await Promise.all([
       this.db.from("demo_state").select("sim_now, inputs_version, scenario_id, scenario_version, time_zone").eq("id", 1).maybeSingle<DemoStateRow>(),
       this.db.from("terminals").select("id, short_name, name, portal_status").order("id").overrideTypes<TerminalRow[], { merge: false }>(),
       this.db.from("customers").select("*").order("id").overrideTypes<CustomerRow[], { merge: false }>(),
@@ -224,7 +211,6 @@ export class OperationsRepository implements DriverReportStore {
       this.db.from("driver_busy_slots").select("driver_id, start_at, end_at, label, job_id").order("start_at").overrideTypes<BusySlotRow[], { merge: false }>(),
       this.db.from("jobs").select("*").order("id").overrideTypes<JobRow[], { merge: false }>(),
       this.db.from("activity_events").select("id, at, kind, severity, message").order("at", { ascending: false }).order("id", { ascending: false }).limit(SNAPSHOT_EVENT_LIMIT).overrideTypes<EventRow[], { merge: false }>(),
-      this.db.from("recovery_plans").select("*").order("id", { ascending: false }).limit(1).overrideTypes<PlanRow[], { merge: false }>(),
     ]);
     if (state.error) throw new Error(`demo_state: ${state.error.message}`);
 
@@ -232,7 +218,6 @@ export class OperationsRepository implements DriverReportStore {
     const timeZone = demo?.time_zone ?? DEFAULT_TIME_ZONE;
     const map = makeMappers(timeZone);
     const slotRows = unwrap("driver_busy_slots", slots);
-    const planRows = unwrap("recovery_plans", plans);
     const mappedTerminals = unwrap("terminals", terminals).map((t) => ({
       id: t.id,
       shortName: t.short_name,
@@ -262,7 +247,6 @@ export class OperationsRepository implements DriverReportStore {
       jobs: mappedJobs,
       drivers: mappedDrivers,
       events: unwrap("activity_events", events).map((e) => ({ ...e, id: Number(e.id), at: map.zoned(e.at) })),
-      plan: planRows[0] ? map.plan(planRows[0]) : null,
       recoveryQueue:
         now && config
           ? buildRecoveryQueue({

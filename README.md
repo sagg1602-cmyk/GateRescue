@@ -29,8 +29,12 @@ approval. All data in this repository is **synthetic**.
     migrations, import, and the backend recovery queue. It matches all 8
     expected-ranking rows before and after D02's 14:10 report. `npm test`
     covers the same comparison plus independent feasibility checks.
-  - ⏳ **Live Supabase import still pending**: two migrations and the import
-    remain to be run (steps in `docs/dataset-import.md`).
+  - ✅ **Live Supabase verified (2026-10-17):** all migrations and the import
+    run on the shared project. Live checks passed:
+    - `GET /api/state` returns the expected state;
+    - the queue matches the fixture 8/8 before D02's report and 8/8 after it;
+    - the report is persisted, and a duplicate re-send changes nothing.
+    Re-run `supabase/import/authoritative_dataset.sql` to reset the demo to 14:05.
   - `GET /api/state` now returns **partial data with explicit `unknowns`**
     instead of failing. Before D02 reports, D02's availability, location and
     last report are listed as unknown.

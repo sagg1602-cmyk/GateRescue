@@ -1,21 +1,26 @@
 /**
  * SHARED OPERATIONAL TYPES — single source of truth for GateRescue data shapes,
- * used by the dashboard (frontend), the API routes and the database mappers.
+ * used by the dashboard (frontend), the API routes, the recovery engine and
+ * the database mappers. Changes here are coordinated with the team; see
+ * docs/frontend-coordination.md for the change log.
  *
- * These were promoted unchanged from the original temporary frontend module
- * (src/lib/demo/frontend-types.ts, which now re-exports this file). Change a
- * shape here, not in a parallel model.
+ * Time convention: every timestamp is an ISO 8601 string WITH an offset
+ * ("2026-10-19T15:00:00-07:00"), expressed in the scenario time zone
+ * (America/Los_Angeles). Compare with src/lib/shared/datetime.ts, never by
+ * slicing strings. `iso.slice(11, 16)` remains valid for wall-clock display.
  *
- * Time conventions:
- * - `IsoLocal` values are timezone-free strings ("2026-10-17T07:30:00") on the
- *   single simulated incident day. The database stores them as `timestamp`
- *   (without time zone), which PostgREST returns in exactly this format.
- * - `IsoInstant` values are real-world instants with an offset
- *   ("2026-10-17T14:31:05.120Z"), used for provenance of external reports.
+ * Unknown values are `null` and listed in `OperationalSnapshot.unknowns`;
+ * they are never replaced with invented defaults.
  */
 
-export type IsoLocal = string;
-export type IsoInstant = string;
+/** ISO 8601 date-time with offset. */
+export type IsoDateTime = string;
+/** @deprecated Former timezone-free alias; now identical to IsoDateTime. */
+export type IsoLocal = IsoDateTime;
+/** @deprecated Use IsoDateTime. */
+export type IsoInstant = IsoDateTime;
+/** Calendar date "YYYY-MM-DD". */
+export type IsoDate = string;
 
 /* ------------------------------------------------------------------ enums */
 
@@ -37,8 +42,13 @@ export type AppointmentStatus = (typeof APPOINTMENT_STATUSES)[number];
 export const HOLD_TYPES = ["customs", "freight", "usda"] as const;
 export type HoldType = (typeof HOLD_TYPES)[number];
 
-export const DRIVER_AVAILABILITIES = ["available", "on-job", "off-duty", "unreachable"] as const;
+/** "not-reported": no status received yet — availability, location and report time unknown. */
+export const DRIVER_AVAILABILITIES = ["available", "on-job", "off-duty", "unreachable", "not-reported"] as const;
 export type DriverAvailability = (typeof DRIVER_AVAILABILITIES)[number];
+
+/** Availability values a driver report may set ("not-reported" is only an initial state). */
+export const REPORTABLE_AVAILABILITIES = ["available", "on-job", "off-duty", "unreachable"] as const;
+export type ReportableAvailability = (typeof REPORTABLE_AVAILABILITIES)[number];
 
 export const ACTIVITY_KINDS = ["system", "terminal", "driver", "plan", "dispatcher"] as const;
 export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
@@ -46,12 +56,16 @@ export type ActivityKind = (typeof ACTIVITY_KINDS)[number];
 export const ACTIVITY_SEVERITIES = ["info", "success", "warning", "critical"] as const;
 export type ActivitySeverity = (typeof ACTIVITY_SEVERITIES)[number];
 
+/** Categories used by the dashboard's local planner (src/lib/demo). */
 export const RECOMMENDATION_CATEGORIES = ["ready", "awaiting-verification", "blocked"] as const;
 export type RecommendationCategory = (typeof RECOMMENDATION_CATEGORIES)[number];
 
 /** Where a driver report came from. Set by the server, never by the request body. */
-export const DRIVER_REPORT_SOURCES = ["dispatcher", "retell"] as const;
+export const DRIVER_REPORT_SOURCES = ["dispatcher", "retell", "scenario"] as const;
 export type DriverReportSource = (typeof DRIVER_REPORT_SOURCES)[number];
+
+export const CRITICALITY_BASES = ["government_designated", "third_party_verified", "self_declared", "none"] as const;
+export type CriticalityBasis = (typeof CRITICALITY_BASES)[number];
 
 /* --------------------------------------------------------------- entities */
 
@@ -59,17 +73,22 @@ export interface Terminal {
   id: TerminalId;
   shortName: string;
   name: string;
+  /** Status of the appointment/scheduling system — not physical closure. */
   portalStatus: TerminalPortalStatus;
 }
 
 export interface Customer {
   id: string;
   name: string;
+  customerType?: string | null;
+  contactName?: string | null;
+  contactPhone?: string | null;
+  city?: string | null;
 }
 
 export interface TimeWindow {
-  start: IsoLocal;
-  end: IsoLocal;
+  start: IsoDateTime;
+  end: IsoDateTime;
 }
 
 export interface AppointmentSnapshot {
@@ -84,9 +103,17 @@ export interface Appointment extends AppointmentSnapshot {
 
 export interface DispatcherApproval {
   driverId: string;
-  approvedAt: IsoLocal;
+  approvedAt: IsoDateTime;
   /** Approval is recorded only; nothing is sent to drivers. */
   simulated: true;
+}
+
+export interface JobCriticality {
+  /** 0–3, higher is more critical. Ranking key for the recovery queue. */
+  tier: number;
+  /** Kept separate from the tier: how the criticality claim is supported. */
+  basis: CriticalityBasis;
+  statedBy: string | null;
 }
 
 export interface Job {
@@ -95,12 +122,21 @@ export interface Job {
   customerId: string;
   terminalId: TerminalId;
   priority: Priority;
-  deadline: IsoLocal;
+  /** Harm deadline: latest acceptable completion (full timestamp). */
+  deadline: IsoDateTime;
   appointment: Appointment;
-  containerAvailable: boolean;
+  /** null = unknown. */
+  containerAvailable: boolean | null;
+  /** When containerAvailable was observed (synthetic tracking snapshot). */
+  containerAvailabilityAsOf?: IsoDateTime | null;
   holds: HoldType[];
   requiredEquipment: EquipmentType;
   approval: DispatcherApproval | null;
+  criticality?: JobCriticality;
+  /** Driver assigned in the source data. History; the recovery engine decides whether it is still reserved. */
+  originalAssignedDriverId?: string | null;
+  cargoDescription?: string | null;
+  lastFreeDay?: IsoDate | null;
 }
 
 export interface BusySlot extends TimeWindow {
@@ -113,16 +149,21 @@ export interface Driver {
   name: string;
   equipment: EquipmentType[];
   availability: DriverAvailability;
-  /** Earliest time the driver can start a new move. */
-  availableFrom: IsoLocal;
-  lastReport: IsoLocal;
+  /** Earliest time the driver can start a new move. null = unknown. */
+  availableFrom: IsoDateTime | null;
+  /** Most recent status report. null = never reported. */
+  lastReport: IsoDateTime | null;
   lastNote: string;
   busy: BusySlot[];
+  /** End of the reported availability window. null/absent = no end reported. */
+  availableUntil?: IsoDateTime | null;
+  /** Last reported location. null = unknown. */
+  location?: string | null;
 }
 
 export interface ActivityEvent {
   id: number;
-  at: IsoLocal;
+  at: IsoDateTime;
   kind: ActivityKind;
   severity: ActivitySeverity;
   message: string;
@@ -134,6 +175,7 @@ export interface RecoveryCheck {
   detail: string;
 }
 
+/** Dashboard-local planner output (src/lib/demo/recovery-heuristic.ts). */
 export interface Recommendation {
   jobId: string;
   category: RecommendationCategory;
@@ -145,11 +187,62 @@ export interface Recommendation {
 
 export interface RecoveryPlan {
   id: number;
-  generatedAt: IsoLocal;
+  generatedAt: IsoDateTime;
   inputsVersion: number;
   status: "current" | "invalidated";
   invalidatedReason: string | null;
   recommendations: Recommendation[];
+}
+
+/* ------------------------------------------- recovery queue (backend engine) */
+
+/** Team-standard job statuses (AGENTS.md). */
+export const RECOVERY_STATUSES = ["ready_for_approval", "awaiting_verification", "blocked"] as const;
+export type RecoveryStatus = (typeof RECOVERY_STATUSES)[number];
+
+export interface ReservationWindow {
+  driverId: string;
+  jobId: string;
+  /** Departure toward the pickup (includes the estimated travel time). */
+  start: IsoDateTime;
+  /** Pickup start + job reservation (pickup and delivery). */
+  end: IsoDateTime;
+  kind: "existing_assignment" | "proposed";
+}
+
+export interface ProposedAssignment {
+  driverId: string;
+  departAt: IsoDateTime;
+  pickupAt: IsoDateTime;
+  completeBy: IsoDateTime;
+  travelMinutes: number;
+}
+
+export interface RecoveryQueueEntry {
+  rank: number;
+  jobId: string;
+  criticalityTier: number | null;
+  criticalityBasis: CriticalityBasis | null;
+  harmDeadline: IsoDateTime;
+  status: RecoveryStatus;
+  /** Machine-readable blocker, e.g. "appointment_unverified", "no_feasible_assignment". */
+  blocker: string | null;
+  /** Who resolves the blocker / takes the next action. */
+  owner: string;
+  nextAction: string;
+  proposedDriverId: string | null;
+  proposal: ProposedAssignment | null;
+  originalAssignedDriverId: string | null;
+  checks: RecoveryCheck[];
+}
+
+export interface RecoveryQueue {
+  computedAt: IsoDateTime;
+  /** Label for the synthetic timing estimates used in feasibility checks. */
+  estimatesLabel: string;
+  entries: RecoveryQueueEntry[];
+  /** Existing assignments kept outside the recovery scope plus proposals in this queue. */
+  reservations: ReservationWindow[];
 }
 
 /* ------------------------------------------------------ backend additions */
@@ -161,30 +254,51 @@ export interface DriverReport {
   source: DriverReportSource;
   /** Unique per source; used to deduplicate retried deliveries (e.g. Retell webhooks). */
   providerEventId: string;
-  /** When the driver gave the report, per the source (real-world instant). */
-  reportedAt: IsoInstant;
+  /** When the driver gave the report, per the source. */
+  reportedAt: IsoDateTime;
   /** When the server stored the report (real-world instant). */
-  receivedAt: IsoInstant;
+  receivedAt: IsoDateTime;
   /** Simulated-clock time at which the report was applied to the driver. */
-  appliedAt: IsoLocal | null;
-  availability: DriverAvailability;
-  /** "HH:MM" on the simulated incident day, as reported. */
-  availableFrom: string;
+  appliedAt: IsoDateTime | null;
+  availability: ReportableAvailability;
+  availableFrom: IsoDateTime;
+  availableUntil: IsoDateTime | null;
+  location: string | null;
+  equipment: EquipmentType[] | null;
   note: string;
 }
 
-/** Full operational state, as returned by GET /api/state. */
+/** A value the dataset does not supply; reported instead of invented. */
+export interface UnknownValue {
+  entity: "scenario" | "terminal" | "customer" | "driver" | "job";
+  id: string;
+  field: string;
+  reason: string;
+}
+
+export interface ScenarioInfo {
+  id: string;
+  version: number;
+  timeZone: string;
+}
+
+/** Operational state, as returned by GET /api/state. Partial data is allowed. */
 export interface OperationalSnapshot {
-  /** Simulated clock. */
-  now: IsoLocal;
+  scenario: ScenarioInfo | null;
+  /** Simulated clock. null if the scenario clock is not set. */
+  now: IsoDateTime | null;
   /** Increments whenever an operational input changes. */
-  inputsVersion: number;
+  inputsVersion: number | null;
   terminals: Terminal[];
   customers: Customer[];
   jobs: Job[];
   drivers: Driver[];
   /** Newest first. */
   events: ActivityEvent[];
-  /** Most recent recovery plan, or null if none has been generated. */
+  /** Most recent dashboard plan, or null if none has been generated. */
   plan: RecoveryPlan | null;
+  /** Ranked recovery queue computed by the backend engine; null if it cannot be computed. */
+  recoveryQueue: RecoveryQueue | null;
+  /** Every null/unknown value in this snapshot, with the reason. */
+  unknowns: UnknownValue[];
 }

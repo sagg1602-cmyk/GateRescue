@@ -19,7 +19,7 @@ const inputClass =
 export function DriverCheckInForm({ drivers, onSubmit }: { drivers: Driver[]; onSubmit: (input: CheckInInput) => void }) {
   const [driverId, setDriverId] = useState(drivers[0]?.id ?? "");
   const [availability, setAvailability] = useState<DriverAvailability>(drivers[0]?.availability ?? "available");
-  const [availableFrom, setAvailableFrom] = useState(formatTime(drivers[0]?.availableFrom ?? "T06:30"));
+  const [availableFrom, setAvailableFrom] = useState(drivers[0]?.availableFrom ? formatTime(drivers[0].availableFrom) : "");
   const [note, setNote] = useState("");
 
   function selectDriver(id: string) {
@@ -27,7 +27,7 @@ export function DriverCheckInForm({ drivers, onSubmit }: { drivers: Driver[]; on
     setDriverId(id);
     if (driver) {
       setAvailability(driver.availability);
-      setAvailableFrom(formatTime(driver.availableFrom));
+      setAvailableFrom(driver.availableFrom ? formatTime(driver.availableFrom) : "");
     }
   }
 

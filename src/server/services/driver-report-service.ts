@@ -1,6 +1,12 @@
 import "server-only";
 import type { DriverReportResponse, ParsedDriverReportRequest } from "@/lib/shared/api-contract";
-import type { Driver, DriverReport, DriverReportSource } from "@/lib/shared/operational-types";
+import type {
+  Driver,
+  DriverReport,
+  DriverReportSource,
+  EquipmentType,
+  ReportableAvailability,
+} from "@/lib/shared/operational-types";
 
 /**
  * Shared driver-report service. Every channel that reports driver status —
@@ -25,8 +31,11 @@ export interface ApplyDriverReportInput {
   source: DriverReportSource;
   providerEventId: string;
   reportedAt: string;
-  availability: Driver["availability"];
+  availability: ReportableAvailability;
   availableFrom: string;
+  availableUntil: string | null;
+  location: string | null;
+  equipment: EquipmentType[] | null;
   note: string;
 }
 
@@ -60,6 +69,9 @@ export async function submitDriverReport(
     reportedAt: input.reportedAt ?? input.receivedAt.toISOString(),
     availability: input.availability,
     availableFrom: input.availableFrom,
+    availableUntil: input.availableUntil ?? null,
+    location: input.location?.trim() || null,
+    equipment: input.equipment ?? null,
     note: input.note.trim(),
   });
 

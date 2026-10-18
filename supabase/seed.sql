@@ -23,7 +23,7 @@ truncate table
   public.demo_state
 restart identity;
 
-insert into public.demo_state (id, sim_now, inputs_version) values (1, '2026-10-17T06:30:00', 1);
+insert into public.demo_state (id, sim_now, inputs_version) values (1, '2026-10-17T06:30:00-07:00', 1);
 
 insert into public.terminals (id, short_name, name, portal_status) values
   ('term-a', 'Terminal A', 'Harborview Container Yard (fictional)', 'online'),
@@ -35,46 +35,46 @@ insert into public.customers (id, name) values
   ('cust-summit', 'Summit Auto Parts');
 
 insert into public.drivers (id, name, equipment, availability, available_from, last_report, last_note) values
-  ('drv-1', 'Marisol Vega', array['chassis-40', 'chassis-20']::text[], 'available', '2026-10-17T06:30:00', '2026-10-17T06:12:00', 'At yard, tractor fueled.'),
-  ('drv-2', 'Theo Okafor', array['reefer-40', 'chassis-40']::text[], 'on-job', '2026-10-17T08:30:00', '2026-10-17T06:05:00', 'Finishing an outbound reefer delivery.'),
-  ('drv-3', 'Priya Raman', array['chassis-20', 'chassis-40']::text[], 'available', '2026-10-17T06:30:00', '2026-10-17T06:20:00', 'Ready at north lot.'),
-  ('drv-4', 'Jonah Becker', array['triaxle', 'chassis-40']::text[], 'off-duty', '2026-10-17T09:00:00', '2026-10-17T05:40:00', 'Shift starts 09:00.'),
-  ('drv-5', 'Ana Lucía Torres', array['chassis-40', 'reefer-40']::text[], 'unreachable', '2026-10-17T06:30:00', '2026-10-17T04:50:00', 'No response since early check.');
+  ('drv-1', 'Marisol Vega', array['chassis-40', 'chassis-20']::text[], 'available', '2026-10-17T06:30:00-07:00', '2026-10-17T06:12:00-07:00', 'At yard, tractor fueled.'),
+  ('drv-2', 'Theo Okafor', array['reefer-40', 'chassis-40']::text[], 'on-job', '2026-10-17T08:30:00-07:00', '2026-10-17T06:05:00-07:00', 'Finishing an outbound reefer delivery.'),
+  ('drv-3', 'Priya Raman', array['chassis-20', 'chassis-40']::text[], 'available', '2026-10-17T06:30:00-07:00', '2026-10-17T06:20:00-07:00', 'Ready at north lot.'),
+  ('drv-4', 'Jonah Becker', array['triaxle', 'chassis-40']::text[], 'off-duty', '2026-10-17T09:00:00-07:00', '2026-10-17T05:40:00-07:00', 'Shift starts 09:00.'),
+  ('drv-5', 'Ana Lucía Torres', array['chassis-40', 'reefer-40']::text[], 'unreachable', '2026-10-17T06:30:00-07:00', '2026-10-17T04:50:00-07:00', 'No response since early check.');
 
 insert into public.jobs (
   id, container, customer_id, terminal_id, priority, deadline,
   appointment_status, appointment_start, appointment_end,
   container_available, holds, required_equipment
 ) values
-  ('job-01', 'SYNU1000011', 'cust-northwind', 'term-a', 'critical', '2026-10-17T10:00:00', 'confirmed', '2026-10-17T07:30:00', '2026-10-17T08:30:00', true, '{}'::text[], 'chassis-40'),
-  ('job-02', 'SYNU1000022', 'cust-cobalt', 'term-a', 'high', '2026-10-17T11:30:00', 'confirmed', '2026-10-17T08:00:00', '2026-10-17T09:00:00', true, '{}'::text[], 'chassis-20'),
-  ('job-03', 'SYNU1000033', 'cust-summit', 'term-a', 'normal', '2026-10-17T15:00:00', 'confirmed', '2026-10-17T09:00:00', '2026-10-17T10:00:00', false, '{}'::text[], 'chassis-40'),
-  ('job-04', 'SYNU1000044', 'cust-northwind', 'term-a', 'critical', '2026-10-17T12:00:00', 'confirmed', '2026-10-17T08:30:00', '2026-10-17T09:30:00', true, '{}'::text[], 'reefer-40'),
-  ('job-05', 'SYNU1000055', 'cust-cobalt', 'term-a', 'normal', '2026-10-17T16:00:00', 'confirmed', '2026-10-17T10:00:00', '2026-10-17T11:00:00', true, array['customs']::text[], 'chassis-40'),
-  ('job-06', 'SYNU1000066', 'cust-summit', 'term-a', 'high', '2026-10-17T13:00:00', 'confirmed', '2026-10-17T10:30:00', '2026-10-17T11:30:00', true, '{}'::text[], 'triaxle'),
-  ('job-07', 'SYNU1000077', 'cust-northwind', 'term-a', 'normal', '2026-10-17T16:30:00', 'confirmed', '2026-10-17T11:00:00', '2026-10-17T12:00:00', true, '{}'::text[], 'chassis-40'),
-  ('job-08', 'SYNU1000088', 'cust-cobalt', 'term-a', 'high', '2026-10-17T12:30:00', 'none', null, null, true, '{}'::text[], 'chassis-40'),
-  ('job-09', 'SYNU1000099', 'cust-summit', 'term-a', 'normal', '2026-10-17T17:00:00', 'confirmed', '2026-10-17T12:00:00', '2026-10-17T13:00:00', true, '{}'::text[], 'chassis-40'),
-  ('job-10', 'SYNU1000101', 'cust-northwind', 'term-a', 'high', '2026-10-17T14:00:00', 'confirmed', '2026-10-17T13:00:00', '2026-10-17T14:00:00', true, '{}'::text[], 'reefer-40'),
-  ('job-11', 'SYNU1000112', 'cust-cobalt', 'term-a', 'critical', '2026-10-17T11:00:00', 'confirmed', '2026-10-17T07:00:00', '2026-10-17T08:00:00', true, array['freight']::text[], 'chassis-40'),
-  ('job-12', 'SYNU2000013', 'cust-summit', 'term-b', 'critical', '2026-10-17T10:30:00', 'confirmed', '2026-10-17T07:30:00', '2026-10-17T08:30:00', true, '{}'::text[], 'chassis-40'),
-  ('job-13', 'SYNU2000024', 'cust-northwind', 'term-b', 'high', '2026-10-17T12:00:00', 'confirmed', '2026-10-17T09:00:00', '2026-10-17T10:00:00', true, '{}'::text[], 'chassis-20'),
-  ('job-14', 'SYNU2000035', 'cust-cobalt', 'term-b', 'normal', '2026-10-17T15:30:00', 'confirmed', '2026-10-17T10:00:00', '2026-10-17T11:00:00', true, '{}'::text[], 'chassis-40'),
-  ('job-15', 'SYNU2000046', 'cust-summit', 'term-b', 'normal', '2026-10-17T16:00:00', 'confirmed', '2026-10-17T11:30:00', '2026-10-17T12:30:00', true, '{}'::text[], 'reefer-40'),
-  ('job-16', 'SYNU2000057', 'cust-northwind', 'term-b', 'high', '2026-10-17T13:30:00', 'confirmed', '2026-10-17T12:00:00', '2026-10-17T13:00:00', true, array['usda']::text[], 'chassis-40'),
-  ('job-17', 'SYNU2000068', 'cust-cobalt', 'term-b', 'normal', '2026-10-17T17:00:00', 'confirmed', '2026-10-17T13:00:00', '2026-10-17T14:00:00', false, '{}'::text[], 'triaxle'),
-  ('job-18', 'SYNU2000079', 'cust-summit', 'term-b', 'high', '2026-10-17T14:30:00', 'confirmed', '2026-10-17T13:30:00', '2026-10-17T14:30:00', true, '{}'::text[], 'chassis-20'),
-  ('job-19', 'SYNU2000081', 'cust-northwind', 'term-b', 'normal', '2026-10-17T17:30:00', 'confirmed', '2026-10-17T14:00:00', '2026-10-17T15:00:00', true, '{}'::text[], 'chassis-40'),
-  ('job-20', 'SYNU2000092', 'cust-cobalt', 'term-b', 'critical', '2026-10-17T11:30:00', 'confirmed', '2026-10-17T08:00:00', '2026-10-17T09:00:00', true, '{}'::text[], 'chassis-40');
+  ('job-01', 'SYNU1000011', 'cust-northwind', 'term-a', 'critical', '2026-10-17T10:00:00-07:00', 'confirmed', '2026-10-17T07:30:00-07:00', '2026-10-17T08:30:00-07:00', true, '{}'::text[], 'chassis-40'),
+  ('job-02', 'SYNU1000022', 'cust-cobalt', 'term-a', 'high', '2026-10-17T11:30:00-07:00', 'confirmed', '2026-10-17T08:00:00-07:00', '2026-10-17T09:00:00-07:00', true, '{}'::text[], 'chassis-20'),
+  ('job-03', 'SYNU1000033', 'cust-summit', 'term-a', 'normal', '2026-10-17T15:00:00-07:00', 'confirmed', '2026-10-17T09:00:00-07:00', '2026-10-17T10:00:00-07:00', false, '{}'::text[], 'chassis-40'),
+  ('job-04', 'SYNU1000044', 'cust-northwind', 'term-a', 'critical', '2026-10-17T12:00:00-07:00', 'confirmed', '2026-10-17T08:30:00-07:00', '2026-10-17T09:30:00-07:00', true, '{}'::text[], 'reefer-40'),
+  ('job-05', 'SYNU1000055', 'cust-cobalt', 'term-a', 'normal', '2026-10-17T16:00:00-07:00', 'confirmed', '2026-10-17T10:00:00-07:00', '2026-10-17T11:00:00-07:00', true, array['customs']::text[], 'chassis-40'),
+  ('job-06', 'SYNU1000066', 'cust-summit', 'term-a', 'high', '2026-10-17T13:00:00-07:00', 'confirmed', '2026-10-17T10:30:00-07:00', '2026-10-17T11:30:00-07:00', true, '{}'::text[], 'triaxle'),
+  ('job-07', 'SYNU1000077', 'cust-northwind', 'term-a', 'normal', '2026-10-17T16:30:00-07:00', 'confirmed', '2026-10-17T11:00:00-07:00', '2026-10-17T12:00:00-07:00', true, '{}'::text[], 'chassis-40'),
+  ('job-08', 'SYNU1000088', 'cust-cobalt', 'term-a', 'high', '2026-10-17T12:30:00-07:00', 'none', null, null, true, '{}'::text[], 'chassis-40'),
+  ('job-09', 'SYNU1000099', 'cust-summit', 'term-a', 'normal', '2026-10-17T17:00:00-07:00', 'confirmed', '2026-10-17T12:00:00-07:00', '2026-10-17T13:00:00-07:00', true, '{}'::text[], 'chassis-40'),
+  ('job-10', 'SYNU1000101', 'cust-northwind', 'term-a', 'high', '2026-10-17T14:00:00-07:00', 'confirmed', '2026-10-17T13:00:00-07:00', '2026-10-17T14:00:00-07:00', true, '{}'::text[], 'reefer-40'),
+  ('job-11', 'SYNU1000112', 'cust-cobalt', 'term-a', 'critical', '2026-10-17T11:00:00-07:00', 'confirmed', '2026-10-17T07:00:00-07:00', '2026-10-17T08:00:00-07:00', true, array['freight']::text[], 'chassis-40'),
+  ('job-12', 'SYNU2000013', 'cust-summit', 'term-b', 'critical', '2026-10-17T10:30:00-07:00', 'confirmed', '2026-10-17T07:30:00-07:00', '2026-10-17T08:30:00-07:00', true, '{}'::text[], 'chassis-40'),
+  ('job-13', 'SYNU2000024', 'cust-northwind', 'term-b', 'high', '2026-10-17T12:00:00-07:00', 'confirmed', '2026-10-17T09:00:00-07:00', '2026-10-17T10:00:00-07:00', true, '{}'::text[], 'chassis-20'),
+  ('job-14', 'SYNU2000035', 'cust-cobalt', 'term-b', 'normal', '2026-10-17T15:30:00-07:00', 'confirmed', '2026-10-17T10:00:00-07:00', '2026-10-17T11:00:00-07:00', true, '{}'::text[], 'chassis-40'),
+  ('job-15', 'SYNU2000046', 'cust-summit', 'term-b', 'normal', '2026-10-17T16:00:00-07:00', 'confirmed', '2026-10-17T11:30:00-07:00', '2026-10-17T12:30:00-07:00', true, '{}'::text[], 'reefer-40'),
+  ('job-16', 'SYNU2000057', 'cust-northwind', 'term-b', 'high', '2026-10-17T13:30:00-07:00', 'confirmed', '2026-10-17T12:00:00-07:00', '2026-10-17T13:00:00-07:00', true, array['usda']::text[], 'chassis-40'),
+  ('job-17', 'SYNU2000068', 'cust-cobalt', 'term-b', 'normal', '2026-10-17T17:00:00-07:00', 'confirmed', '2026-10-17T13:00:00-07:00', '2026-10-17T14:00:00-07:00', false, '{}'::text[], 'triaxle'),
+  ('job-18', 'SYNU2000079', 'cust-summit', 'term-b', 'high', '2026-10-17T14:30:00-07:00', 'confirmed', '2026-10-17T13:30:00-07:00', '2026-10-17T14:30:00-07:00', true, '{}'::text[], 'chassis-20'),
+  ('job-19', 'SYNU2000081', 'cust-northwind', 'term-b', 'normal', '2026-10-17T17:30:00-07:00', 'confirmed', '2026-10-17T14:00:00-07:00', '2026-10-17T15:00:00-07:00', true, '{}'::text[], 'chassis-40'),
+  ('job-20', 'SYNU2000092', 'cust-cobalt', 'term-b', 'critical', '2026-10-17T11:30:00-07:00', 'confirmed', '2026-10-17T08:00:00-07:00', '2026-10-17T09:00:00-07:00', true, '{}'::text[], 'chassis-40');
 
 insert into public.driver_busy_slots (driver_id, start_at, end_at, label, job_id) values
-  ('drv-2', '2026-10-17T06:00:00', '2026-10-17T08:30:00', 'Pre-existing delivery', null);
+  ('drv-2', '2026-10-17T06:00:00-07:00', '2026-10-17T08:30:00-07:00', 'Pre-existing delivery', null);
 
 insert into public.activity_events (id, at, kind, severity, message) overriding system value values
-  (1, '2026-10-17T06:00:00', 'system', 'info', 'Synthetic demo dataset loaded: 20 jobs, 5 drivers, 2 terminals.'),
-  (2, '2026-10-17T06:12:00', 'driver', 'info', 'Marisol Vega checked in — available at yard.'),
-  (3, '2026-10-17T06:20:00', 'driver', 'info', 'Priya Raman checked in — available at north lot.'),
-  (4, '2026-10-17T06:25:00', 'terminal', 'success', 'Terminal A and Terminal B appointment portals reachable.');
+  (1, '2026-10-17T06:00:00-07:00', 'system', 'info', 'Synthetic demo dataset loaded: 20 jobs, 5 drivers, 2 terminals.'),
+  (2, '2026-10-17T06:12:00-07:00', 'driver', 'info', 'Marisol Vega checked in — available at yard.'),
+  (3, '2026-10-17T06:20:00-07:00', 'driver', 'info', 'Priya Raman checked in — available at north lot.'),
+  (4, '2026-10-17T06:25:00-07:00', 'terminal', 'success', 'Terminal A and Terminal B appointment portals reachable.');
 
 select setval(pg_get_serial_sequence('public.activity_events', 'id'), (select max(id) from public.activity_events));
 

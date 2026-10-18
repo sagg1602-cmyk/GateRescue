@@ -19,18 +19,23 @@ approval. All data in this repository is **synthetic**.
   `GET /api/state`, `POST /api/driver-reports`, demo session endpoints,
   Supabase schema with RLS, server-only database access.
   Contract: [docs/backend-contract.md](docs/backend-contract.md).
-- **Scenario dataset import**: Maelie's CSVs (`data/source/`, unchanged)
-  convert to `supabase/import/authoritative_dataset.sql`.
-  Details and open items: [docs/dataset-import.md](docs/dataset-import.md).
-  - ✅ Migrations, import and API were **tested locally** against a disposable
-    Postgres + PostgREST stack.
-  - ⏳ The **live Supabase import is still pending**: the operational-schema
-    migration has been run; the dataset migration and import have not.
-  - ⚠️ The dataset is missing scenario fields (simulated start time, container
-    availability, driver last-report times). Until they are supplied,
-    **`GET /api/state` returns `503 dataset_incomplete`** with the list of
-    missing values, and driver reports return the same error until the
-    start time is set. Values are never invented to fill the gaps.
+- **Scenario `terminal-a-outage` v1**: Maelie's CSVs (`data/source/`,
+  unchanged) plus the team-authorized decisions in
+  `data/scenario/terminal-a-outage.v1.json`
+  ([docs/scenario-decisions.md](docs/scenario-decisions.md)) convert to
+  `supabase/import/authoritative_dataset.sql`
+  ([docs/dataset-import.md](docs/dataset-import.md)).
+  - ✅ **Tested locally** (disposable Postgres + PostgREST and the real API):
+    migrations, import, and the backend recovery queue. It matches all 8
+    expected-ranking rows before and after D02's 14:10 report. `npm test`
+    covers the same comparison plus independent feasibility checks.
+  - ⏳ **Live Supabase import still pending**: two migrations and the import
+    remain to be run (steps in `docs/dataset-import.md`).
+  - `GET /api/state` now returns **partial data with explicit `unknowns`**
+    instead of failing. Before D02 reports, D02's availability, location and
+    last report are listed as unknown.
+  - Shared-type and date-handling changes for the dashboard are listed in
+    [docs/frontend-coordination.md](docs/frontend-coordination.md).
 
 ## Run locally
 
@@ -48,6 +53,7 @@ backend owner — never commit real credentials.
 | Command | Purpose |
 |---|---|
 | `npm run lint` / `npm run build` | Lint and production build |
-| `npm run db:import:generate [-- --sim-now=2026-10-19THH:MM:00]` | Regenerate the dataset import from `data/source/` |
+| `npm test` | Recovery engine, feasibility, date handling and expected-ranking tests (Node test runner) |
+| `npm run db:import:generate` | Regenerate the scenario import from `data/source/` + `data/scenario/` |
 | `npm run fixture:ranking` | Regenerate `tests/fixtures/expected-ranking.json` (test fixture, not operational data) |
 | `npm run db:seed:generate` | Regenerate the **legacy** local-demo seed (do not load into the shared project) |

@@ -96,7 +96,7 @@ export function RecoveryPanel({
           </div>
 
           {invalidated && (
-            <div className="mb-4 rounded-lg border border-awaiting/30 bg-awaiting-soft px-4 py-3 text-sm text-awaiting">
+            <div className="mb-4 border border-awaiting/30 bg-awaiting-soft px-4 py-3 text-sm text-awaiting">
               <p className="font-semibold">Recommendations invalidated</p>
               <p className="mt-0.5 text-xs">
                 Operational inputs changed ({plan.invalidatedReason}). Approvals are disabled until you regenerate the
@@ -168,7 +168,7 @@ function RecommendationCard({
   const ready = rec.category === "ready";
   const border = ready ? "border-2 border-ready" : rec.category === "blocked" ? "border-blocked/30" : "border-awaiting/30";
   return (
-    <article className={`rounded-lg border bg-white p-3 ${border}`}>
+    <article className={` border bg-white p-3 ${border}`}>
       {ready && !rec.approved && (
         <p className="mb-2">
           <Badge tone="teal" solid>

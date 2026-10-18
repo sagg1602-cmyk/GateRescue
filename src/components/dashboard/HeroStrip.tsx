@@ -62,12 +62,12 @@ export function HeroStrip({
               {step.action ? (
                 <a
                   href={step.action.href}
-                  className={`inline-flex min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold transition-[transform,background-color] hover:-translate-y-0.5 ${pillTone}`}
+                  className={`inline-flex min-h-12 items-center justify-center px-7 text-sm font-semibold transition-[transform,background-color] hover:-translate-y-0.5 ${pillTone}`}
                 >
                   {step.title}
                 </a>
               ) : (
-                <span className="inline-flex min-h-12 items-center rounded-full border border-line px-7 text-sm font-semibold text-navy">
+                <span className="inline-flex min-h-12 items-center border border-line px-7 text-sm font-semibold text-navy">
                   {step.title}
                 </span>
               )}

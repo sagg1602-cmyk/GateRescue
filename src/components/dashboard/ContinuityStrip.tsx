@@ -52,7 +52,7 @@ export function ContinuityStrip({ phase }: { phase: ContinuityPhase }) {
               }`}
             >
               <span
-                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${
+                className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-[11px] font-semibold ${
                   isCurrent ? step.dot : isPast ? "bg-paper-deep text-slate-700" : "bg-white text-ink-muted ring-1 ring-line"
                 }`}
                 aria-hidden

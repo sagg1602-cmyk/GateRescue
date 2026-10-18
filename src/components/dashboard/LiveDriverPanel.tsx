@@ -118,7 +118,7 @@ function DriverRow({
         </div>
       </dl>
       {(report || driver.lastReport) && (
-        <div className="mt-2 rounded-md bg-awaiting-soft px-2.5 py-2">
+        <div className="mt-2 bg-awaiting-soft px-2.5 py-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge tone="amber">Driver-reported, unverified</Badge>
             {report && <span className="text-[11px] text-slate-600">{REPORT_SOURCE_LABEL[report.source]}</span>}

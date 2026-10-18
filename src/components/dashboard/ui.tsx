@@ -19,7 +19,7 @@ const SOLID_TONE_CLASSES: Record<Tone, string> = {
 export function Badge({ tone = "neutral", solid = false, children }: { tone?: Tone; solid?: boolean; children: ReactNode }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
+      className={`inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset ${
         solid ? SOLID_TONE_CLASSES[tone] : TONE_CLASSES[tone]
       }`}
     >
@@ -31,7 +31,7 @@ export function Badge({ tone = "neutral", solid = false, children }: { tone?: To
 export function SyntheticBadge({ onDark = false }: { onDark?: boolean }) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ring-1 ring-inset ${
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ring-1 ring-inset ${
         onDark ? "bg-amber-400/15 text-amber-200 ring-amber-300/40" : "bg-awaiting-soft text-awaiting ring-awaiting/30"
       }`}
     >
@@ -128,7 +128,7 @@ export function Button({
     <button
       type="button"
       {...props}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full font-semibold transition-colors disabled:cursor-not-allowed ${
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 font-semibold transition-colors disabled:cursor-not-allowed ${
         size === "sm" ? "px-3.5 text-xs" : "px-5 text-sm"
       } ${BUTTON_VARIANTS[variant]} ${className}`}
     />
@@ -137,7 +137,7 @@ export function Button({
 
 /** Shimmering placeholder block shown while data loads. Decorative: pair it with sr-only status text. */
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <span aria-hidden className={`skeleton block rounded-md ${className}`} />;
+  return <span aria-hidden className={`skeleton block ${className}`} />;
 }
 
 const LIGHT_CLASSES = {
@@ -171,7 +171,7 @@ export function JumpLink({ href, children, onDark = false }: { href: string; chi
   return (
     <a
       href={href}
-      className={`inline-flex min-h-11 items-center gap-1 rounded-full px-4 text-sm font-semibold underline-offset-4 hover:underline ${
+      className={`inline-flex min-h-11 items-center gap-1 px-4 text-sm font-semibold underline-offset-4 hover:underline ${
         onDark ? "bg-white/10 text-white ring-1 ring-inset ring-white/25" : "bg-white text-navy ring-1 ring-inset ring-line"
       }`}
     >

@@ -96,7 +96,7 @@ export function NextStepBanner({ step }: { step: Step }) {
           <div className="flex shrink-0 flex-col items-start gap-3 lg:items-end">
             <a
               href={step.action.href}
-              className={`inline-flex min-h-12 items-center justify-center rounded-full px-7 text-sm font-semibold shadow-card transition-colors ${tone.button}`}
+              className={`inline-flex min-h-12 items-center justify-center px-7 text-sm font-semibold shadow-card transition-colors ${tone.button}`}
             >
               {step.action.label}
             </a>

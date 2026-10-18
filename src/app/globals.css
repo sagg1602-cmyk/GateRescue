@@ -20,8 +20,8 @@
   --color-tile-teal: #2f7f93;
   --color-tile-slate: #3a5078;
 
-  /* One radius everywhere. */
-  --radius-card: 12px;
+  /* Sharp corners everywhere, like a drawing sheet. Kept as a token so it can be turned back on in one place. */
+  --radius-card: 0px;
 
   /* Shadow scale: resting and hover. Navy-tinted so it sits on the off-white paper. */
   --shadow-card: 0 1px 2px rgb(15 29 51 / 0.05), 0 1px 0 rgb(15 29 51 / 0.02);

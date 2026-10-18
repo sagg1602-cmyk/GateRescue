@@ -36,7 +36,7 @@ const D02_EXAMPLE_CALL = {
 } as const satisfies CheckInInput;
 
 const inputClass =
-  "min-h-11 w-full rounded-md border border-[#8a877e] bg-white px-3 py-2 text-sm text-navy placeholder:text-ink-muted focus:border-ready focus:outline-none focus:ring-2 focus:ring-ready/30";
+  "min-h-11 w-full border border-[#8a877e] bg-white px-3 py-2 text-sm text-navy placeholder:text-ink-muted focus:border-ready focus:outline-none focus:ring-2 focus:ring-ready/30";
 
 const isReportable = (value: DriverAvailability): value is ReportableAvailability =>
   (REPORTABLE_AVAILABILITIES as readonly string[]).includes(value);
@@ -262,9 +262,9 @@ export function DriverCheckInForm({
 
       <div aria-live="polite">
         {outcome && (
-          <div className="mt-3 flex gap-2.5 rounded-md border border-ready/40 bg-ready-soft px-3 py-2.5 text-xs text-ready">
+          <div className="mt-3 flex gap-2.5 border border-ready/40 bg-ready-soft px-3 py-2.5 text-xs text-ready">
             <span
-              className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ready text-[11px] font-bold text-white"
+              className="mt-px flex h-5 w-5 shrink-0 items-center justify-center bg-ready text-[11px] font-bold text-white"
               aria-hidden
             >
               ✓
@@ -297,7 +297,7 @@ export function DriverCheckInForm({
         )}
       </div>
       {error && (
-        <p role="alert" className="mt-3 rounded-md border border-blocked/30 bg-blocked-soft px-3 py-2 text-xs text-blocked">
+        <p role="alert" className="mt-3 border border-blocked/30 bg-blocked-soft px-3 py-2 text-xs text-blocked">
           {error}
         </p>
       )}

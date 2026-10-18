@@ -112,7 +112,7 @@ function AccessCodePrompt({
             onChange={(e) => setCode(e.target.value)}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "access-code-error" : undefined}
-            className="min-h-11 rounded-md border border-[#8a877e] bg-white px-3 py-2 text-sm text-navy focus:border-ready focus:outline-none focus:ring-2 focus:ring-ready/30"
+            className="min-h-11 border border-[#8a877e] bg-white px-3 py-2 text-sm text-navy focus:border-ready focus:outline-none focus:ring-2 focus:ring-ready/30"
           />
         </label>
         <Button type="submit" variant="primary" disabled={submitting || !code}>

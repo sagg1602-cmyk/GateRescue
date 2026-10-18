@@ -169,7 +169,7 @@ export function BackendQueuePanel() {
       }
     >
       {error && (
-        <p role="alert" className="mx-6 mt-4 rounded-lg border border-blocked/30 bg-blocked-soft px-4 py-3 text-sm text-blocked">
+        <p role="alert" className="mx-6 mt-4 border border-blocked/30 bg-blocked-soft px-4 py-3 text-sm text-blocked">
           Could not load the recovery queue: {error}. Use Refresh to try again.
         </p>
       )}
@@ -312,7 +312,7 @@ function QueueEntry({
           <span className="font-display text-3xl font-semibold leading-none tracking-tight tabular-nums text-rust md:text-4xl">
             #{entry.rank}
           </span>
-          <span className={`w-1 flex-1 rounded-full ${STATUS_BAR[entry.status]}`} aria-hidden />
+          <span className={`w-1 flex-1 ${STATUS_BAR[entry.status]}`} aria-hidden />
         </div>
 
         <div className="min-w-0 flex-1">
@@ -371,7 +371,7 @@ function QueueEntry({
           )}
 
           {(driverId || entry.proposal) && (
-            <div className={`mt-3 rounded-md px-3 py-2 text-xs text-slate-700 ${ready ? "bg-white" : "bg-paper"}`}>
+            <div className={`mt-3 px-3 py-2 text-xs text-slate-700 ${ready ? "bg-white" : "bg-paper"}`}>
               <p>
                 <span className="text-ink-muted">Proposed driver:</span>{" "}
                 <span className="font-semibold text-navy">{driver ? `${driver.name} (${driverId})` : driverId}</span>

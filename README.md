@@ -15,7 +15,7 @@ approval. All data in this repository is **synthetic**.
 
 - **Dashboard** (`/`): runs entirely on built-in local synthetic data
   (`src/lib/demo/`). Not yet connected to the API.
-- **Backend foundation** (branch `backend/foundation`, not merged):
+- **Backend foundation** (merged into `main`):
   `GET /api/state`, `POST /api/driver-reports`, demo session endpoints,
   Supabase schema with RLS, server-only database access.
   Contract: [docs/backend-contract.md](docs/backend-contract.md).
@@ -40,6 +40,16 @@ approval. All data in this repository is **synthetic**.
     last report are listed as unknown.
   - Shared-type and date-handling changes for the dashboard are listed in
     [docs/frontend-coordination.md](docs/frontend-coordination.md).
+
+- **Retell driver-report intake** (signature-authenticated, deduplicated,
+  through the shared driver-report service):
+  - **post-call webhook `POST /api/retell`** (`call_analyzed` + Post Call
+    Extraction) is the single report writer for the demo;
+  - the mid-call custom function `POST /api/retell/driver-report` is
+    implemented but not configured;
+  - at most one report per call across both paths.
+
+  Tested locally. Setup: [docs/retell-integration.md](docs/retell-integration.md).
 
 ## Run locally
 

@@ -10,7 +10,7 @@
     "db:seed:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/generate-seed.mjs",
     "db:import:generate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning scripts/import-authoritative-csv.mjs",
     "fixture:ranking": "node scripts/build-ranking-fixture.mjs",
-    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-reporter=spec tests/recovery/*.test.ts"
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --disable-warning=ExperimentalWarning --test --test-reporter=spec tests/recovery/*.test.ts tests/retell/*.test.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

@@ -17,10 +17,11 @@ import type {
   TerminalId,
 } from "./frontend-types";
 
-export const DEMO_DAY = "2026-10-17T00:00:00";
-export const DEMO_START_TIME = "2026-10-17T06:30:00";
+// Times carry the Pacific offset so comparisons respect dates (see src/lib/shared/datetime.ts).
+export const DEMO_DAY = "2026-10-17T00:00:00-07:00";
+export const DEMO_START_TIME = "2026-10-17T06:30:00-07:00";
 
-const t = (hhmm: string) => `2026-10-17T${hhmm}:00`;
+const t = (hhmm: string) => `2026-10-17T${hhmm}:00-07:00`;
 
 export const TERMINALS: Terminal[] = [
   {

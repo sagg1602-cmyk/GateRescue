@@ -1,23 +1,28 @@
+import { addMinutesIso, setWallClockTime, toEpochMs } from "../shared/datetime";
 import type { IsoLocal, TimeWindow } from "./frontend-types";
 
-// Timezone-free helpers for the single simulated incident day. Avoids Date so
-// rendering is deterministic on server and client.
+// Display/arithmetic helpers for the dashboard. Timestamps carry an offset
+// ("2026-10-17T07:30:00-07:00"); comparisons use the absolute instant, so
+// multi-day values sort correctly. Deterministic on server and client.
 
+/**
+ * Absolute minutes since the epoch. Only meaningful for comparisons and
+ * differences (e.g. `toMinutes(b) - toMinutes(a)`), never for display.
+ */
 export function toMinutes(iso: IsoLocal): number {
-  return Number(iso.slice(11, 13)) * 60 + Number(iso.slice(14, 16));
+  return Math.floor(toEpochMs(iso) / 60_000);
 }
 
 export function addMinutes(iso: IsoLocal, minutes: number): IsoLocal {
-  const total = toMinutes(iso) + minutes;
-  const h = String(Math.floor(total / 60)).padStart(2, "0");
-  const m = String(total % 60).padStart(2, "0");
-  return `${iso.slice(0, 11)}${h}:${m}:00`;
+  return addMinutesIso(iso, minutes);
 }
 
+/** Same date and offset as `dayIso`, at wall-clock "HH:MM". */
 export function withTime(dayIso: IsoLocal, hhmm: string): IsoLocal {
-  return `${dayIso.slice(0, 11)}${hhmm}:00`;
+  return setWallClockTime(dayIso, hhmm);
 }
 
+/** Wall-clock "HH:MM" in the timestamp's own offset. */
 export function formatTime(iso: IsoLocal): string {
   return iso.slice(11, 16);
 }
@@ -27,5 +32,5 @@ export function formatWindow(window: TimeWindow | null): string {
 }
 
 export function overlaps(a: TimeWindow, b: TimeWindow): boolean {
-  return toMinutes(a.start) < toMinutes(b.end) && toMinutes(b.start) < toMinutes(a.end);
+  return toEpochMs(a.start) < toEpochMs(b.end) && toEpochMs(b.start) < toEpochMs(a.end);
 }

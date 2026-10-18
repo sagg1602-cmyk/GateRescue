@@ -1,0 +1,4 @@
+customer_id,name,customer_type,contact_name,contact_phone,city,data_origin
+C01,Westbay Medical Supply,hospital_supplier,Dana Whitfield,555-0101,"Long Beach, CA",synthetic
+C02,Coastline Fresh Foods,grocery_reefer_importer,Marco Ibarra,555-0102,"Carson, CA",synthetic
+C03,Brightwave Electronics,electronics_importer,Grace Liu,555-0103,"Torrance, CA",synthetic

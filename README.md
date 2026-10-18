@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GateRescue
 
-## Getting Started
+Drayage disruption recovery for port dispatchers: when a terminal's
+appointment portal goes down, GateRescue tracks which moves are affected,
+collects driver check-ins, and proposes recovery assignments for dispatcher
+approval. All data in this repository is **synthetic**.
 
-First, run the development server:
+| Area | Owner |
+|---|---|
+| Backend, GitHub, Vercel | Sebastian |
+| Frontend (dispatcher dashboard) | Melanie |
+| Scenario / data, pitch | Maelie |
+
+## Current status
+
+- **Dashboard** (`/`): runs entirely on built-in local synthetic data
+  (`src/lib/demo/`). Not yet connected to the API.
+- **Backend foundation** (branch `backend/foundation`, not merged):
+  `GET /api/state`, `POST /api/driver-reports`, demo session endpoints,
+  Supabase schema with RLS, server-only database access.
+  Contract: [docs/backend-contract.md](docs/backend-contract.md).
+- **Scenario `terminal-a-outage` v1**: Maelie's CSVs (`data/source/`,
+  unchanged) plus the team-authorized decisions in
+  `data/scenario/terminal-a-outage.v1.json`
+  ([docs/scenario-decisions.md](docs/scenario-decisions.md)) convert to
+  `supabase/import/authoritative_dataset.sql`
+  ([docs/dataset-import.md](docs/dataset-import.md)).
+  - ✅ **Tested locally** (disposable Postgres + PostgREST and the real API):
+    migrations, import, and the backend recovery queue. It matches all 8
+    expected-ranking rows before and after D02's 14:10 report. `npm test`
+    covers the same comparison plus independent feasibility checks.
+  - ✅ **Live Supabase verified (2026-10-17):** all migrations and the import
+    run on the shared project. Live checks passed:
+    - `GET /api/state` returns the expected state;
+    - the queue matches the fixture 8/8 before D02's report and 8/8 after it;
+    - the report is persisted, and a duplicate re-send changes nothing.
+    Re-run `supabase/import/authoritative_dataset.sql` to reset the demo to 14:05.
+  - `GET /api/state` now returns **partial data with explicit `unknowns`**
+    instead of failing. Before D02 reports, D02's availability, location and
+    last report are listed as unknown.
+  - Shared-type and date-handling changes for the dashboard are listed in
+    [docs/frontend-coordination.md](docs/frontend-coordination.md).
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The dashboard needs no configuration. To exercise the API, copy
+`.env.example` to `.env.local` (git-ignored) and fill in the values from the
+backend owner — never commit real credentials.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Useful scripts
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Command | Purpose |
+|---|---|
+| `npm run lint` / `npm run build` | Lint and production build |
+| `npm test` | Recovery engine, feasibility, date handling and expected-ranking tests (Node test runner) |
+| `npm run db:import:generate` | Regenerate the scenario import from `data/source/` + `data/scenario/` |
+| `npm run fixture:ranking` | Regenerate `tests/fixtures/expected-ranking.json` (test fixture, not operational data) |
+| `npm run db:seed:generate` | Regenerate the **legacy** local-demo seed (do not load into the shared project) |

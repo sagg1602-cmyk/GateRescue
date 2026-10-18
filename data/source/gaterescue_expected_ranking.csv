@@ -1,0 +1,9 @@
+rank,job_id,criticality_tier,harm_deadline,status_before_call,blocker_before_call,proposed_driver_before_call,next_action_before_call,status_after_call,blocker_after_call,proposed_driver_after_call,next_action_after_call,owner,data_origin
+1,J01,2,2026-10-20T08:00:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic
+2,J02,1,2026-10-19T17:30:00-07:00,blocked,no_feasible_assignment,,wait_for_reefer_driver_report,ready_for_approval,,D02,dispatcher_approves,dispatcher,synthetic
+3,J09,1,2026-10-19T20:30:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic
+4,J04,1,2026-10-20T06:00:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic
+5,J15,0,2026-10-21T12:00:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic
+6,J11,0,2026-10-23T12:00:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic
+7,J17,0,2026-10-23T12:00:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic
+8,J03,0,2026-10-26T17:00:00-07:00,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,awaiting_verification,appointment_unverified,,call_terminal_to_reconfirm,dispatcher,synthetic

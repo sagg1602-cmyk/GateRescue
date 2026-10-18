@@ -1,0 +1,6 @@
+driver_id,name,phone,equipment,status_at_start,available_from,location_at_start,checked_in,data_origin
+D01,Marcus Reyes,555-0111,dry_40,busy,2026-10-19T14:30:00-07:00,Terminal B,true,synthetic
+D02,Aisha Johnson,555-0112,reefer_40,not_reported,,,false,synthetic
+D03,Daniel Kim,555-0113,dry_40,available,2026-10-19T13:00:00-07:00,Terminal B,true,synthetic
+D04,Luis Ortega,555-0114,reefer_40,busy,2026-10-19T18:00:00-07:00,Terminal B,true,synthetic
+D05,Priya Nair,555-0115,dry_20,available,2026-10-19T11:00:00-07:00,Terminal C,true,synthetic

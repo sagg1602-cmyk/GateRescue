@@ -9,6 +9,7 @@ export const AVAILABILITY_LABEL: Record<DriverAvailability, { label: string; ton
   "on-job": { label: "On job", tone: "neutral" },
   "off-duty": { label: "Off duty", tone: "neutral" },
   unreachable: { label: "Unreachable", tone: "red" },
+  "not-reported": { label: "Not reported", tone: "amber" },
 };
 
 /** Check-ins older than this are flagged as stale. */
@@ -20,8 +21,8 @@ export function DriverPanel({ drivers, now, children }: { drivers: Driver[]; now
       <ul className="divide-y divide-slate-100">
         {drivers.map((driver) => {
           const availability = AVAILABILITY_LABEL[driver.availability];
-          const age = toMinutes(now) - toMinutes(driver.lastReport);
-          const stale = age > STALE_REPORT_MINUTES;
+          const age = driver.lastReport ? toMinutes(now) - toMinutes(driver.lastReport) : null;
+          const stale = age === null || age > STALE_REPORT_MINUTES;
           const commitments = driver.busy.filter((slot) => slot.jobId);
           return (
             <li key={driver.id} className="px-5 py-3">
@@ -37,8 +38,9 @@ export function DriverPanel({ drivers, now, children }: { drivers: Driver[]; now
                 ))}
               </div>
               <p className={`mt-1.5 text-xs ${stale ? "font-medium text-amber-700" : "text-slate-500"}`}>
-                Last report {formatTime(driver.lastReport)} · {age} min ago{stale ? " · stale" : ""}
-                {driver.availability !== "unreachable" && ` · free from ${formatTime(driver.availableFrom)}`}
+                {driver.lastReport ? `Last report ${formatTime(driver.lastReport)} · ${age} min ago` : "No report yet"}
+                {driver.lastReport && stale ? " · stale" : ""}
+                {driver.availability !== "unreachable" && driver.availableFrom && ` · free from ${formatTime(driver.availableFrom)}`}
               </p>
               <p className="mt-0.5 truncate text-xs italic text-slate-400" title={driver.lastNote}>
                 “{driver.lastNote}”

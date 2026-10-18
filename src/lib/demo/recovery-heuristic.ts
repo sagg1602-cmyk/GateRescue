@@ -32,13 +32,22 @@ export function isDriverReachable(driver: Driver): boolean {
   return driver.availability === "available" || driver.availability === "on-job";
 }
 
+/** Jobs without an appointment sort after those with one. */
+function appointmentStartMinutes(job: Job): number {
+  return job.appointment.window ? toMinutes(job.appointment.window.start) : Number.MAX_SAFE_INTEGER;
+}
+
+/** Unknown availability (null) never qualifies. */
+function availableFromMinutes(driver: Driver): number {
+  return driver.availableFrom ? toMinutes(driver.availableFrom) : Number.MAX_SAFE_INTEGER;
+}
+
 export function sortJobsForPlanning(jobs: Job[]): Job[] {
   return [...jobs].sort(
     (a, b) =>
       PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
       toMinutes(a.deadline) - toMinutes(b.deadline) ||
-      (a.appointment.window ? toMinutes(a.appointment.window.start) : 9999) -
-        (b.appointment.window ? toMinutes(b.appointment.window.start) : 9999) ||
+      appointmentStartMinutes(a) - appointmentStartMinutes(b) ||
       a.id.localeCompare(b.id),
   );
 }
@@ -132,12 +141,12 @@ export function generateRecoveryPlan(
       return finish(job, "blocked", null, checks, drivers);
     }
     const free = reachable
-      .filter((d) => toMinutes(d.availableFrom) <= toMinutes(block.start))
+      .filter((d) => availableFromMinutes(d) <= toMinutes(block.start))
       .filter((d) => !(reservations.get(d.id) ?? []).some((slot) => overlaps(slot, block)))
       .sort(
         (a, b) =>
           (planCount.get(a.id) ?? 0) - (planCount.get(b.id) ?? 0) ||
-          toMinutes(a.availableFrom) - toMinutes(b.availableFrom) ||
+          availableFromMinutes(a) - availableFromMinutes(b) ||
           a.id.localeCompare(b.id),
       );
 

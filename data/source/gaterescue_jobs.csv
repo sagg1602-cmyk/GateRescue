@@ -1,0 +1,21 @@
+job_id,customer_id,container_id,cargo_description,container_type,terminal,appointment_start,appointment_end,appointment_status,assigned_driver_id,criticality_tier,criticality_basis,criticality_stated_by,harm_deadline,hold_type,last_free_day,data_origin
+J01,C01,SYNU1000001,Ventilators,dry_40,Terminal A,2026-10-19T15:00:00-07:00,2026-10-19T16:00:00-07:00,confirmed,,2,third_party_verified,Westbay Medical Supply,2026-10-20T08:00:00-07:00,none,2026-10-21,synthetic
+J02,C02,SYNU1000002,Fresh produce,reefer_40,Terminal B,2026-10-19T15:30:00-07:00,2026-10-19T17:30:00-07:00,confirmed,,1,self_declared,Coastline Fresh Foods,2026-10-19T17:30:00-07:00,none,2026-10-20,synthetic
+J03,C03,SYNU1000003,Laptops,dry_20,Terminal A,2026-10-19T21:00:00-07:00,2026-10-19T22:00:00-07:00,confirmed,D05,0,none,,2026-10-26T17:00:00-07:00,none,2026-10-23,synthetic
+J04,C01,SYNU1000004,Surgical gloves,dry_20,Terminal A,2026-10-19T18:30:00-07:00,2026-10-19T19:30:00-07:00,confirmed,D05,1,self_declared,Westbay Medical Supply,2026-10-20T06:00:00-07:00,none,2026-10-21,synthetic
+J05,C03,SYNU1000005,Televisions,dry_40,Terminal C,2026-10-19T16:30:00-07:00,2026-10-19T17:30:00-07:00,confirmed,D01,0,none,,2026-10-22T12:00:00-07:00,none,2026-10-22,synthetic
+J06,C01,SYNU1000006,IV bags,dry_40,Terminal B,2026-10-19T07:00:00-07:00,2026-10-19T08:00:00-07:00,confirmed,D01,1,self_declared,Westbay Medical Supply,2026-10-20T12:00:00-07:00,none,2026-10-20,synthetic
+J07,C03,SYNU1000007,Phone accessories,dry_40,Terminal B,2026-10-19T11:30:00-07:00,2026-10-19T12:30:00-07:00,confirmed,D03,0,none,,2026-10-24T17:00:00-07:00,customs,2026-10-23,synthetic
+J08,C02,SYNU1000008,Frozen seafood,reefer_40,Terminal B,2026-10-19T08:00:00-07:00,2026-10-19T09:00:00-07:00,confirmed,D04,1,self_declared,Coastline Fresh Foods,2026-10-19T12:00:00-07:00,none,2026-10-20,synthetic
+J09,C01,SYNU1000009,Wound-care kits,dry_40,Terminal A,2026-10-19T17:00:00-07:00,2026-10-19T18:00:00-07:00,confirmed,D03,1,self_declared,Westbay Medical Supply,2026-10-19T20:30:00-07:00,none,2026-10-20,synthetic
+J10,C03,SYNU1000010,Monitors,dry_40,Terminal C,2026-10-19T10:00:00-07:00,2026-10-19T11:00:00-07:00,confirmed,D01,0,none,,2026-10-23T17:00:00-07:00,none,2026-10-22,synthetic
+J11,C03,SYNU1000011,Printers,dry_40,Terminal A,2026-10-19T19:00:00-07:00,2026-10-19T20:00:00-07:00,confirmed,D03,0,none,,2026-10-23T12:00:00-07:00,none,2026-10-23,synthetic
+J12,C03,SYNU1000012,Cables,dry_20,Terminal C,2026-10-19T09:30:00-07:00,2026-10-19T10:30:00-07:00,confirmed,D05,0,none,,2026-10-24T17:00:00-07:00,freight,2026-10-22,synthetic
+J13,C02,SYNU1000013,Dairy,reefer_40,Terminal C,2026-10-19T11:00:00-07:00,2026-10-19T12:00:00-07:00,confirmed,D04,1,self_declared,Coastline Fresh Foods,2026-10-19T15:00:00-07:00,none,2026-10-20,synthetic
+J14,C01,SYNU1000014,Syringes,dry_40,Terminal B,2026-10-19T13:00:00-07:00,2026-10-19T14:00:00-07:00,confirmed,D01,1,self_declared,Westbay Medical Supply,2026-10-20T09:00:00-07:00,none,2026-10-21,synthetic
+J15,C03,SYNU1000015,Tablets,dry_40,Terminal A,2026-10-19T14:30:00-07:00,2026-10-19T15:30:00-07:00,confirmed,D03,0,none,,2026-10-21T12:00:00-07:00,none,2026-10-21,synthetic
+J16,C02,SYNU1000016,Berries,reefer_40,Terminal B,2026-10-19T13:30:00-07:00,2026-10-19T14:30:00-07:00,confirmed,D04,1,self_declared,Coastline Fresh Foods,2026-10-19T18:00:00-07:00,none,2026-10-20,synthetic
+J17,C03,SYNU1000017,Speakers,dry_20,Terminal A,2026-10-19T15:30:00-07:00,2026-10-19T16:30:00-07:00,confirmed,D05,0,none,,2026-10-23T12:00:00-07:00,none,2026-10-22,synthetic
+J18,C02,SYNU1000018,Frozen meat,reefer_40,Terminal C,2026-10-19T16:00:00-07:00,2026-10-19T17:00:00-07:00,confirmed,D04,1,self_declared,Coastline Fresh Foods,2026-10-19T19:30:00-07:00,none,2026-10-20,synthetic
+J19,C03,SYNU1000019,Game consoles,dry_40,Terminal B,2026-10-19T19:00:00-07:00,2026-10-19T20:00:00-07:00,confirmed,D01,0,none,,2026-10-25T17:00:00-07:00,none,2026-10-23,synthetic
+J20,C03,SYNU1000020,Keyboards,dry_40,Terminal C,2026-10-19T08:30:00-07:00,2026-10-19T09:30:00-07:00,confirmed,D03,0,none,,2026-10-22T12:00:00-07:00,none,2026-10-22,synthetic

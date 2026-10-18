@@ -1,0 +1,80 @@
+{
+  "$comment": "Fictional scenario decisions that fill gaps in data/source/*.csv (which stay unchanged). Authorized by the team on 2026-10-17. Documented in docs/scenario-decisions.md. Bump `version` for any change.",
+  "id": "terminal-a-outage",
+  "version": 1,
+  "dataOrigin": "synthetic",
+  "timeZone": "America/Los_Angeles",
+  "start": "2026-10-19T14:00:00-07:00",
+
+  "containerTracking": {
+    "label": "Synthetic container tracking snapshot",
+    "snapshotAt": "2026-10-19T14:00:00-07:00",
+    "allContainersAvailable": true,
+    "holdsRemainBlocking": true
+  },
+
+  "driverStartState": {
+    "reportedDrivers": {
+      "driverIds": ["D01", "D03", "D04", "D05"],
+      "lastReportAt": "2026-10-19T13:55:00-07:00",
+      "keepCsvAvailableFrom": true
+    },
+    "notReportedDrivers": {
+      "driverIds": ["D02"],
+      "unknownFields": ["availability", "location", "availableFrom", "lastReport"]
+    }
+  },
+
+  "events": [
+    {
+      "type": "terminal_scheduling_outage",
+      "at": "2026-10-19T14:05:00-07:00",
+      "terminal": "Terminal A",
+      "effect": "confirmed_appointments_become_unverified",
+      "physicalClosure": false,
+      "appliedBy": "import"
+    },
+    {
+      "type": "driver_report",
+      "at": "2026-10-19T14:10:00-07:00",
+      "appliedBy": "api",
+      "request": {
+        "driverId": "D02",
+        "availability": "available",
+        "availableFrom": "2026-10-19T15:00:00-07:00",
+        "availableUntil": "2026-10-19T19:00:00-07:00",
+        "location": "Terminal B staging area",
+        "equipment": ["reefer-40"],
+        "note": "At Terminal B staging area with reefer_40 equipment, available 15:00–19:00.",
+        "providerEventId": "scenario-terminal-a-outage-v1-d02-1410",
+        "reportedAt": "2026-10-19T14:10:00-07:00"
+      }
+    }
+  ],
+
+  "recovery": {
+    "scope": {
+      "includeOutageAffectedJobs": true,
+      "includeUnassignedJobs": true,
+      "expectedUnassignedJobIds": ["J01", "J02"]
+    },
+    "existingAssignments": {
+      "outsideScope": "preserve_and_reserve",
+      "insideScope": "keep_as_history"
+    },
+    "ranking": ["criticality_tier_desc", "harm_deadline_asc", "job_id_asc"],
+    "timingEstimates": {
+      "label": "Synthetic timing estimate",
+      "sameAreaTravelMinutes": 15,
+      "betweenAreasTravelMinutes": 30,
+      "jobReservationMinutes": 120,
+      "jobReservationIncludes": "pickup and delivery"
+    },
+    "locationAreas": {
+      "Terminal A": "Terminal A",
+      "Terminal B": "Terminal B",
+      "Terminal C": "Terminal C",
+      "Terminal B staging area": "Terminal B"
+    }
+  }
+}

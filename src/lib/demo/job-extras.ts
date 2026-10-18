@@ -37,27 +37,27 @@ const PLACEHOLDER_EXTRAS: Record<string, Partial<JobExtras>> = {
   "job-01": {
     tier: 2,
     consequence: "Ventilator supplies for a hospital; patient care delayed",
-    harmDeadline: "2026-10-17T09:15:00",
+    harmDeadline: "2026-10-17T09:15:00-07:00",
   },
   "job-04": {
     tier: 1,
     consequence: "Perishable groceries spoil if not moved today",
-    harmDeadline: "2026-10-17T14:00:00",
+    harmDeadline: "2026-10-17T14:00:00-07:00",
   },
   "job-07": {
     tier: 0,
     consequence: "Seasonal décor restock; no customer impact today",
-    harmDeadline: "2026-10-17T23:00:00",
+    harmDeadline: "2026-10-17T23:00:00-07:00",
   },
   "job-12": {
     tier: 2,
     consequence: "Assembly-line parts; plant idles the afternoon shift",
-    harmDeadline: "2026-10-17T09:30:00",
+    harmDeadline: "2026-10-17T09:30:00-07:00",
   },
   "job-20": {
     tier: 3,
     consequence: "Emergency shelter supplies under a government relief order",
-    harmDeadline: "2026-10-17T10:00:00",
+    harmDeadline: "2026-10-17T10:00:00-07:00",
   },
 };
 

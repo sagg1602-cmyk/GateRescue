@@ -9,8 +9,16 @@ For: backend (Sebastian), scenario/data (Maelie), frontend (Melanie).
 >   - the import, including the reset and the legacy-seed guard;
 >   - `GET /api/state` and the D02 report. Both give 8/8 expected-ranking
 >     rows before and after the report.
-> - **Live Supabase import pending.** Run there so far: the operational-schema
->   migration only. Exact steps are below.
+> - **Live Supabase: done and verified (2026-10-17).** All three migrations
+>   and the import run on the shared project. Live checks through the API
+>   passed:
+>   - state retrieval;
+>   - recovery queue 8/8 before D02's report and 8/8 after;
+>   - the report persisted (one `driver_reports` row; D02 updated);
+>   - a duplicate re-send was a no-op.
+>
+>   The live database is now at 14:10 (after the report). Re-run the import
+>   to reset to 14:05.
 > - `GET /api/state` returns **partial data with explicit `unknowns`**. It no
 >   longer fails on incomplete data: once imported, the only unknowns are
 >   D02's fields until the 14:10 report. Driver reports return

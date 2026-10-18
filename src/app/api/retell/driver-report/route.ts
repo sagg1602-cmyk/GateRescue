@@ -74,6 +74,7 @@ export async function POST(request: Request) {
       driverId: identity.driverId,
       ...mapped.report,
       providerEventId: retellProviderEventId(call.call_id, args),
+      providerCallId: call.call_id,
       reportedAt: undefined,
       source: "retell",
       receivedAt,

@@ -30,6 +30,8 @@ export interface ApplyDriverReportInput {
   driverId: string;
   source: DriverReportSource;
   providerEventId: string;
+  /** Provider call id; at most one report per (source, call) is applied. */
+  providerCallId: string | null;
   reportedAt: string;
   availability: ReportableAvailability;
   availableFrom: string;
@@ -56,6 +58,7 @@ export interface SubmitDriverReportInput extends ParsedDriverReportRequest {
   source: DriverReportSource;
   /** Server receipt instant; used as reportedAt when the source omits it. */
   receivedAt: Date;
+  providerCallId?: string | null;
 }
 
 export async function submitDriverReport(
@@ -66,6 +69,7 @@ export async function submitDriverReport(
     driverId: input.driverId,
     source: input.source,
     providerEventId: input.providerEventId,
+    providerCallId: input.providerCallId ?? null,
     reportedAt: input.reportedAt ?? input.receivedAt.toISOString(),
     availability: input.availability,
     availableFrom: input.availableFrom,

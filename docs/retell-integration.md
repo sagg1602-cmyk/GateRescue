@@ -13,6 +13,102 @@ Status: implemented and tested locally (unit tests plus an end-to-end run
 with requests signed by the official retell-sdk code). **Not yet tested with
 a real Retell call.** That needs a deployed URL; see "Real test call" below.
 
+## Demo setup: post-call webhook is the single writer
+
+For the demo, reports are written **only** by the post-call webhook
+`POST /api/retell` (Retell `call_analyzed` event + Post Call Extraction).
+Do **not** add the `submit_driver_report` custom function to the demo
+agent. That path stays implemented (section below) but is not configured.
+If both are ever enabled, the database still applies at most one Retell
+report per call (`driver_reports_one_per_call`), so the second path becomes
+a duplicate.
+
+### Before deploying: run in Supabase (SQL Editor)
+
+`supabase/migrations/20261020000000_retell_one_report_per_call.sql`, the
+whole file. It adds `provider_call_id` and the one-report-per-call guard,
+and updates `apply_driver_report()`. Deploy the code **after** running it:
+the new code calls the updated function.
+
+### Webhook (Retell agent → Webhook settings)
+
+- URL: `https://<production-domain>/api/retell`. The domain is on the Vercel
+  project's Overview page; production deploys from `main`.
+- Events: `call_analyzed` is the one that writes. `call_started` and
+  `call_ended` are accepted and ignored.
+- Signing: Retell signs every webhook with the API key that has the webhook
+  badge. Set that key as `RETELL_API_KEY` in Vercel. Unsigned or wrongly
+  signed requests get `401`.
+- The production domain must be publicly reachable (Vercel → Settings →
+  Deployment Protection must not cover production).
+
+### Who the driver is
+
+The route trusts only call-level configuration:
+`retell_llm_dynamic_variables.driver_id`, else `metadata.driver_id`. For the
+D02 test call, set the dynamic variable `driver_id = D02` (and
+`driver_name = Aisha Johnson` for the prompt). The extracted `driver_name` is
+never used to pick the driver; a mismatch is only logged
+(`name_mismatch: true`).
+
+### Post Call Extraction fields (Retell agent → Post call extraction)
+
+The names must match exactly:
+
+| Name | Type | Description to paste | Choices |
+|---|---|---|---|
+| `driver_name` | Text | Name the driver gave on the call. | — |
+| `available` | Boolean | True if the driver says they can take a new load today; false if not. Leave empty if unclear. | — |
+| `available_from` | Text | Time the driver becomes available, 24-hour HH:MM local time, e.g. 15:00. Leave empty if not stated or unclear. | — |
+| `available_until` | Text | Time the driver's availability ends, 24-hour HH:MM local time, e.g. 19:00. Leave empty if not stated. | — |
+| `location_type` | Selector | Where the driver is now. | `terminal`, `staging_area`, `other`, `unknown` |
+| `terminal_name` | Selector | Which terminal the driver is at or near. | `Terminal A`, `Terminal B`, `Terminal C`, `none` |
+| `equipment` | Selector | Container equipment the driver has. | `dry_20`, `dry_40`, `reefer_40`, `unknown` |
+| `appointment_outcome` | Text | Anything said about the terminal appointment, one short phrase. | — |
+| `notes` | Text | Anything else relevant, one sentence. | — |
+
+Mapping rules:
+- A report is written only when `available` is true and `available_from` is
+  an unambiguous time: `15:00`, `09:30`, `3 pm` or `3:30 pm`. Single-digit
+  times without am/pm, like `3:00`, are ambiguous.
+- Times are placed on the configured scenario date (2026-10-19) in
+  America/Los_Angeles.
+- A missing or ambiguous `available_until`, location or equipment stays
+  unknown; the report still saves.
+- `available = false` writes nothing: these fields can't distinguish on-job
+  from off-duty or give a return time. Add a selector field later if needed.
+- `staging_area` plus `Terminal B` becomes the location "Terminal B staging
+  area", which the recovery engine places in the Terminal B area.
+- `notes` and `appointment_outcome` go into the report note.
+
+### Responses and logs
+
+- The report is saved (committed) **before** the 200 response; there is no
+  background work. Retell's timeout is 10 s with up to 3 retries.
+- Outcomes:
+  - `200 {ok, outcome}`, where outcome is `recorded`, `duplicate`,
+    `ignored`, `incomplete`, `driver_not_identified` or `driver_not_found`;
+  - `401` bad signature; `400` malformed; `503`/`500` retryable.
+- Logs are one JSON line per webhook: event, `call_id`, driver id, outcome,
+  report id, unknown field names, and the names (not values) of the analysis
+  fields received. Transcripts and answers are not logged.
+
+### Test call (with Maélie)
+
+1. Reset the scenario: run `supabase/import/authoritative_dataset.sql`.
+2. Start the test call with dynamic variable `driver_id = D02`. Answer:
+   available, 15:00 until 19:00, Terminal B staging area, reefer 40.
+3. After the call, Vercel → Logs: look for
+   `{"route":"POST /api/retell","event":"call_analyzed",…,"outcome":"recorded"}`.
+   If the outcome is `incomplete`, its `unknown` list names the fields to
+   fix in the extraction setup.
+4. `GET /api/state`: D02 is available 15:00–19:00 at Terminal B staging
+   area, and J02 is `ready_for_approval` with D02.
+
+---
+
+## Custom-function path (implemented, not configured for the demo)
+
 ## How it works
 
 | Concern | Behaviour |

@@ -106,7 +106,8 @@ export function composeLocation(locationType: unknown, terminalName: unknown): s
   const terminalMatch = text(terminalName)?.match(TERMINAL_NAME);
   const terminal = terminalMatch ? `Terminal ${terminalMatch[1].toUpperCase()}` : null;
   if (!type || !terminal) return null;
-  if (type === "terminal") return terminal;
+  // "terminal_yard" is the scenario owner's Retell choice for being at the terminal.
+  if (type === "terminal" || type === "terminal_yard") return terminal;
   if (type === "staging_area" || type === "staging") return `${terminal} staging area`;
   return null;
 }

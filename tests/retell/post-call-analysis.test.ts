@@ -49,6 +49,26 @@ describe("call_analyzed payload", () => {
 });
 
 describe("post-call mapping", () => {
+  it("maps the real call c86e03e2 answers (terminal_yard) to a complete report", () => {
+    const m = mapPostCallAnalysis(
+      {
+        driver_name: "Aisha Johnson",
+        available: "yes",
+        available_from: "15:00",
+        available_until: "19:00",
+        location_type: "terminal_yard",
+        terminal_name: "Terminal B",
+        equipment: "reefer_40",
+        appointment_outcome: "none",
+        notes: "",
+      },
+      DEMO_DATE,
+    );
+    assert.ok(m.kind === "report");
+    assert.equal(m.report.location, "Terminal B");
+    assert.deepEqual(m.unknownFields, []);
+  });
+
   it("maps the D02 call to a report on the configured demo date", () => {
     const m = mapPostCallAnalysis(D02_FIELDS, DEMO_DATE);
     assert.equal(m.kind, "report");
@@ -104,6 +124,10 @@ describe("post-call mapping", () => {
     assert.equal(parseAvailable("unclear"), null);
     assert.equal(composeLocation("staging_area", "terminal b"), "Terminal B staging area");
     assert.equal(composeLocation("terminal", "Terminal C"), "Terminal C");
+    assert.equal(composeLocation("terminal_yard", "Terminal B"), "Terminal B");
+    assert.equal(composeLocation("terminal_yard", "none"), null);
+    assert.equal(composeLocation("other", "Terminal B"), null);
+    assert.equal(composeLocation("yard", "Terminal B"), null);
     assert.equal(composeLocation("staging_area", "Terminal Z"), null);
     assert.equal(composeLocation(undefined, "Terminal B"), null);
   });

@@ -1,58 +1,79 @@
 import type { ReactNode } from "react";
 
-interface SummaryCard {
+export interface StatCard {
   label: string;
-  value: number;
+  /** null renders as "—" (not loaded or not computed). */
+  value: number | null;
   hint: ReactNode;
-  accent: "teal" | "amber" | "red" | "slate";
+  /** Filled teal; reserved for the Ready for approval count. */
+  featured?: boolean;
 }
 
-const ACCENTS: Record<SummaryCard["accent"], string> = {
-  teal: "border-t-teal-500",
-  amber: "border-t-amber-500",
-  red: "border-t-red-500",
-  slate: "border-t-slate-400",
-};
+/** One row of five deck-style stat cards with large numerals. */
+export function StatCardRow({ cards }: { cards: StatCard[] }) {
+  return (
+    <dl className="grid grid-cols-5 gap-4">
+      {cards.map((card) => (
+        <div
+          key={card.label}
+          className={`flex min-w-0 flex-col rounded-card border px-5 py-5 ${
+            card.featured ? "border-ready bg-ready text-white" : "border-line bg-white"
+          }`}
+        >
+          <dt className={`eyebrow ${card.featured ? "text-white" : "text-rust"}`}>{card.label}</dt>
+          <dd
+            className={`mt-3 font-display text-5xl font-semibold leading-none tabular-nums ${
+              card.featured ? "text-white" : "text-rust"
+            }`}
+          >
+            {card.value === null ? "—" : card.value}
+          </dd>
+          <dd className={`mt-3 text-xs leading-snug ${card.featured ? "text-white/90" : "text-ink-muted"}`}>{card.hint}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
 
 export function SummaryCards({
+  readyForApproval,
+  planInvalidated,
   totalJobs,
   affectedJobs,
   availableDrivers,
   totalDrivers,
   urgentJobs,
 }: {
+  /** Unapproved ready recommendations in the current plan; null when no plan exists. */
+  readyForApproval: number | null;
+  planInvalidated: boolean;
   totalJobs: number;
   affectedJobs: number;
   availableDrivers: number;
   totalDrivers: number;
   urgentJobs: number;
 }) {
-  const cards: SummaryCard[] = [
-    { label: "Total jobs", value: totalJobs, hint: "Synthetic import moves today", accent: "slate" },
+  const cards: StatCard[] = [
+    {
+      label: "Ready for approval",
+      value: readyForApproval,
+      hint:
+        readyForApproval === null
+          ? "Generate a recovery plan to see ready jobs"
+          : planInvalidated
+            ? "Plan out of date: regenerate before approving"
+            : "All checks pass; awaiting dispatcher approval",
+      featured: true,
+    },
     {
       label: "Affected jobs",
       value: affectedJobs,
       hint: affectedJobs ? "Appointments unverified or lost in outage" : "No outage impact",
-      accent: affectedJobs ? "amber" : "teal",
     },
-    {
-      label: "Available drivers",
-      value: availableDrivers,
-      hint: `of ${totalDrivers} on roster, by latest check-in`,
-      accent: "teal",
-    },
-    { label: "Urgent jobs", value: urgentJobs, hint: "Critical or due within 3 h, unapproved", accent: urgentJobs ? "red" : "teal" },
+    { label: "Urgent jobs", value: urgentJobs, hint: "Critical or due within 3 h, unapproved" },
+    { label: "Available drivers", value: availableDrivers, hint: `of ${totalDrivers} on roster, by latest check-in` },
+    { label: "Total jobs", value: totalJobs, hint: "Synthetic import moves today" },
   ];
 
-  return (
-    <div className="grid grid-cols-4 gap-4">
-      {cards.map((card) => (
-        <div key={card.label} className={`rounded-xl border border-slate-200 border-t-4 bg-white px-5 py-4 shadow-sm ${ACCENTS[card.accent]}`}>
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{card.label}</p>
-          <p className="mt-1 text-3xl font-semibold tabular-nums text-slate-900">{card.value}</p>
-          <p className="mt-1 text-xs text-slate-500">{card.hint}</p>
-        </div>
-      ))}
-    </div>
-  );
+  return <StatCardRow cards={cards} />;
 }

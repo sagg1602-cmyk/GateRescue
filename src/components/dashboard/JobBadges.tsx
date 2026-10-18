@@ -18,7 +18,7 @@ export function TierBadge({ tier, stacked = false }: { tier: CriticalityTier; st
     return (
       <span title={TIER_DESCRIPTION[tier]} className="inline-flex flex-col items-start gap-0.5">
         <Badge tone={TIER_TONE[tier]}>Tier {tier}</Badge>
-        <span className="whitespace-nowrap text-[11px] text-slate-500">{TIER_LABEL[tier]}</span>
+        <span className="whitespace-nowrap text-[11px] text-ink-muted">{TIER_LABEL[tier]}</span>
       </span>
     );
   }

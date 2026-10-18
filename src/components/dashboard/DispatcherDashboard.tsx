@@ -18,6 +18,7 @@ import { LiveDriverPanel } from "./LiveDriverPanel";
 import { LivePortalAlerts, LiveSidebar } from "./LiveSidebar";
 import { LiveShipmentTable } from "./LiveShipmentTable";
 import { LiveSummaryCards } from "./LiveSummaryCards";
+import { liveNextStep, localNextStep, NextStepBanner } from "./NextStep";
 import { ReconciliationView } from "./ReconciliationView";
 import { RecoveryPanel } from "./RecoveryPanel";
 import { ShipmentTable } from "./ShipmentTable";
@@ -58,8 +59,11 @@ export function DispatcherDashboard() {
   const affectedJobs = state.jobs.filter(isOutageAffected).length;
   const unverified = state.jobs.filter((j) => j.appointment.status === "unverified").length;
 
+  const readyForApproval =
+    state.plan?.recommendations.filter((r) => r.category === "ready" && !r.approved).length ?? null;
+
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-paper">
       <Sidebar
         now={state.now}
         terminals={state.terminals}
@@ -74,7 +78,7 @@ export function DispatcherDashboard() {
         }}
       />
 
-      <main className="min-w-0 flex-1 px-8 py-6">
+      <main className="min-w-0 flex-1 px-10 py-8">
         <ContinuityStrip phase={continuityPhase(outageTerminal, state.jobs)} />
         {showReconciliation ? (
           <ReconciliationView
@@ -87,33 +91,27 @@ export function DispatcherDashboard() {
           />
         ) : (
           <>
-            <header className="mb-5 flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dispatcher dashboard</h1>
-                <p className="text-sm text-slate-500">Port drayage recovery — fictional terminals, customers and drivers</p>
-              </div>
-              <SyntheticBadge />
-            </header>
+            <DashboardHeader badges={<SyntheticBadge />} />
 
             {outageTerminal?.portalStatus === "outage" && (
-              <div role="alert" className="mb-5 rounded-xl border border-red-300 bg-red-50 px-5 py-3 text-sm text-red-800">
+              <div role="alert" className="mb-5 rounded-card border border-blocked/30 bg-blocked-soft px-6 py-4 text-sm text-blocked">
                 <span className="font-semibold">{outageTerminal.shortName} appointment portal outage (simulated).</span>{" "}
                 {unverified} appointments are unverified. Previous values are preserved for reconciliation.
               </div>
             )}
             {outageTerminal?.portalStatus === "reconciling" && (
-              <div role="status" className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm text-amber-900">
+              <div role="status" className="mb-5 rounded-card border border-awaiting/30 bg-awaiting-soft px-6 py-4 text-sm text-awaiting">
                 <span className="font-semibold">{outageTerminal.shortName} access restored — reconciliation mode.</span>{" "}
                 {unverified} appointments are still unverified. Nothing is confirmed automatically; reconfirm or mark each
                 one lost in the shipments table.
               </div>
             )}
 
-            <AccessGate>
-              <BackendQueuePanel />
-            </AccessGate>
+            <NextStepBanner step={localNextStep({ outageTerminal, plan: state.plan, jobs: state.jobs })} />
 
             <SummaryCards
+              readyForApproval={readyForApproval}
+              planInvalidated={state.plan?.status === "invalidated"}
               totalJobs={state.jobs.length}
               affectedJobs={affectedJobs}
               availableDrivers={state.drivers.filter((d) => d.availability === "available").length}
@@ -121,8 +119,14 @@ export function DispatcherDashboard() {
               urgentJobs={state.jobs.filter((j) => isUrgent(j, state.now)).length}
             />
 
-            <div className="mt-5 grid grid-cols-12 gap-5">
-              <div className="col-span-8 flex min-w-0 flex-col gap-5">
+            <div className="mt-6">
+              <AccessGate>
+                <BackendQueuePanel />
+              </AccessGate>
+            </div>
+
+            <div className="mt-6 grid grid-cols-12 gap-6">
+              <div className="col-span-8 flex min-w-0 flex-col gap-6">
                 <RecoveryPanel
                   plan={state.plan}
                   jobs={state.jobs}
@@ -143,7 +147,7 @@ export function DispatcherDashboard() {
                   onMarkLost={(jobId) => dispatch({ type: "mark-appointment-lost", jobId })}
                 />
               </div>
-              <div className="col-span-4 flex min-w-0 flex-col gap-5">
+              <div className="col-span-4 flex min-w-0 flex-col gap-6">
                 <DriverPanel drivers={state.drivers} now={state.now}>
                   <DriverCheckIn
                     key={resetCount}
@@ -163,42 +167,72 @@ export function DispatcherDashboard() {
 
 function ConnectedDashboard({ snapshot, checkIn }: { snapshot: StateResponse | null; checkIn: ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-paper">
       <LiveSidebar snapshot={snapshot} />
-      <main className="min-w-0 flex-1 px-8 py-6">
-        <header className="mb-5 flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Dispatcher dashboard</h1>
-            <p className="text-sm text-slate-500">Port drayage recovery — fictional terminals, customers and drivers</p>
-            <p className="mt-1 text-sm text-slate-600">
-              {snapshot?.now
-                ? `Simulated clock ${formatTime(snapshot.now)} · ${formatSnapshotDate(snapshot.now)}`
-                : "Simulated clock not set"}
-              {snapshot?.scenario && ` · Scenario ${snapshot.scenario.id} v${snapshot.scenario.version}`}
-            </p>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <LiveDataBadge />
-            <SyntheticBadge />
-          </div>
-        </header>
+      <main className="min-w-0 flex-1 px-10 py-8">
+        <DashboardHeader
+          badges={
+            <>
+              <LiveDataBadge />
+              <SyntheticBadge />
+            </>
+          }
+          meta={
+            <>
+              {snapshot?.now ? (
+                <>
+                  Simulated clock <span className="font-mono">{formatTime(snapshot.now)}</span> ·{" "}
+                  {formatSnapshotDate(snapshot.now)}
+                </>
+              ) : (
+                "Simulated clock not set"
+              )}
+              {snapshot?.scenario && (
+                <>
+                  {" "}
+                  · Scenario <span className="font-mono">{snapshot.scenario.id}</span> v{snapshot.scenario.version}
+                </>
+              )}
+            </>
+          }
+        />
 
         {snapshot && <LivePortalAlerts snapshot={snapshot} />}
 
-        <BackendQueuePanel />
+        <NextStepBanner step={liveNextStep(snapshot)} />
         <LiveSummaryCards snapshot={snapshot} />
 
-        <div className="mt-5 grid grid-cols-12 gap-5">
+        <div className="my-6">
+          <BackendQueuePanel />
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
           <div className="col-span-8 min-w-0">
             <LiveShipmentTable snapshot={snapshot} />
           </div>
-          <div className="col-span-4 flex min-w-0 flex-col gap-5">
+          <div className="col-span-4 flex min-w-0 flex-col gap-6">
             <LiveDriverPanel snapshot={snapshot}>{checkIn}</LiveDriverPanel>
             {snapshot && <ActivityLog events={snapshot.events} />}
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+function DashboardHeader({ badges, meta }: { badges: ReactNode; meta?: ReactNode }) {
+  return (
+    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p className="eyebrow text-rust">Port drayage recovery</p>
+        <h1 className="mt-2 font-display text-5xl font-semibold leading-none tracking-tight text-navy">
+          Dispatcher dashboard
+        </h1>
+        <p className="mt-2 text-sm text-ink-muted">Fictional terminals, customers and drivers</p>
+        {meta && <p className="mt-1 text-sm text-ink-muted">{meta}</p>}
+      </div>
+      <div className="flex shrink-0 items-center gap-2">{badges}</div>
+    </header>
   );
 }
 

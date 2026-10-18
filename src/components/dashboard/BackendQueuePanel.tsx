@@ -13,7 +13,8 @@ import type {
 } from "@/lib/shared/operational-types";
 import { TierBadge } from "./JobBadges";
 import { useLiveBackend } from "./LiveBackendContext";
-import { Badge, Button, Panel } from "./ui";
+import { humanizeCode, needsDriverReport } from "./snapshot-display";
+import { Badge, Button, JumpLink, Panel } from "./ui";
 
 const STATUS_CHIP: Record<RecoveryStatus, { label: string; tone: Tone }> = {
   ready_for_approval: { label: "Ready for approval", tone: "teal" },
@@ -22,22 +23,18 @@ const STATUS_CHIP: Record<RecoveryStatus, { label: string; tone: Tone }> = {
 };
 
 const CHECK_ICON: Record<RecoveryCheck["result"], { symbol: string; className: string }> = {
-  pass: { symbol: "✓", className: "text-teal-600" },
-  fail: { symbol: "✕", className: "text-red-600" },
-  skip: { symbol: "–", className: "text-slate-400" },
+  pass: { symbol: "✓", className: "text-ready" },
+  fail: { symbol: "✕", className: "text-blocked" },
+  skip: { symbol: "–", className: "text-ink-muted" },
 };
+
+const CHECK_RESULT_LABEL: Record<RecoveryCheck["result"], string> = { pass: "Pass", fail: "Fail", skip: "Skipped" };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** "Oct 20 · 08:00" in the timestamp's own offset; harm deadlines can fall on later days. */
 function formatDateTime(iso: string): string {
   return `${MONTHS[Number(iso.slice(5, 7)) - 1]} ${Number(iso.slice(8, 10))} · ${formatTime(iso)}`;
-}
-
-/** Backend codes such as "call_terminal_to_reconfirm" → "Call terminal to reconfirm". */
-function humanize(code: string): string {
-  const words = code.replaceAll("_", " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 const POLL_INTERVAL_MS = 5_000;
@@ -135,8 +132,9 @@ export function BackendQueuePanel() {
 
   return (
     <Panel
-      className="mb-5"
-      title="Live recovery queue (backend)"
+      id="live-queue"
+      eyebrow="Ranked by the backend"
+      title="Live recovery queue"
       subtitle={
         snapshot ? (
           <>
@@ -159,26 +157,30 @@ export function BackendQueuePanel() {
       }
     >
       {error && (
-        <p role="alert" className="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
-          Could not load the recovery queue: {error}
+        <p role="alert" className="mx-6 mt-4 rounded-lg border border-blocked/30 bg-blocked-soft px-4 py-3 text-sm text-blocked">
+          Could not load the recovery queue: {error}. Use Refresh to try again.
         </p>
       )}
 
-      {!snapshot && loading && <p className="px-5 py-8 text-center text-sm text-slate-500">Loading recovery queue…</p>}
+      {!snapshot && loading && (
+        <p role="status" className="px-6 py-10 text-center text-sm text-ink-muted">
+          Loading recovery queue…
+        </p>
+      )}
 
       {snapshot && !queue && (
-        <p className="px-5 py-8 text-center text-sm text-slate-500">
+        <p className="px-6 py-10 text-center text-sm text-ink-muted">
           The backend could not compute a queue yet: the simulated clock or scenario configuration is missing.
           {snapshot.unknowns.length > 0 && ` ${snapshot.unknowns.length} values are reported as unknown.`}
         </p>
       )}
 
       {queue && queue.entries.length === 0 && (
-        <p className="px-5 py-8 text-center text-sm text-slate-500">No jobs in the recovery queue.</p>
+        <p className="px-6 py-10 text-center text-sm text-ink-muted">No jobs in the recovery queue.</p>
       )}
 
       {queue && queue.entries.length > 0 && (
-        <ol className={`max-h-[32rem] divide-y divide-slate-100 overflow-y-auto ${loading ? "opacity-60" : ""}`}>
+        <ol className={`max-h-[32rem] divide-y divide-line overflow-y-auto ${loading ? "opacity-60" : ""}`}>
           {[...queue.entries]
             .sort((a, b) => a.rank - b.rank)
             .map((entry) => (
@@ -204,23 +206,23 @@ export function BackendQueuePanel() {
 
 function RecentDriverReports({ reports, snapshot }: { reports: DriverReport[]; snapshot: StateResponse }) {
   return (
-    <section className="border-t border-slate-200 bg-slate-50/70 px-5 py-3">
+    <section className="border-t border-line bg-paper px-6 py-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-600">Recent driver reports</h3>
+        <h3 className="eyebrow text-rust">Recent driver reports</h3>
         <Badge tone="amber">Driver-reported, unverified</Badge>
       </div>
-      <ul className="mt-2 divide-y divide-slate-100 text-xs">
+      <ul className="mt-2 divide-y divide-line text-xs">
         {reports.map((report) => {
           const driver = snapshot.drivers.find((d) => d.id === report.driverId);
           return (
             <li key={report.id ?? `${report.driverId}-${report.reportedAt}`} className="flex gap-3 py-1.5">
-              <span className="w-12 shrink-0 font-mono tabular-nums text-slate-500">{formatTime(report.reportedAt)}</span>
+              <span className="w-12 shrink-0 font-mono tabular-nums text-ink-muted">{formatTime(report.reportedAt)}</span>
               <span className="min-w-0 flex-1">
                 <span className="font-medium text-slate-800">
                   {driver ? `${driver.name} (${report.driverId})` : report.driverId}
                 </span>
-                <span className="text-slate-400"> · </span>
-                <span className="text-slate-500">{REPORT_SOURCE_LABEL[report.source] ?? report.source}</span>
+                <span className="text-ink-muted"> · </span>
+                <span className="text-ink-muted">{REPORT_SOURCE_LABEL[report.source] ?? report.source}</span>
                 <span className="block text-slate-600">{report.note || "No note"}</span>
               </span>
             </li>
@@ -236,17 +238,21 @@ const CLOCK = new Intl.DateTimeFormat("en-US", { hour: "2-digit", minute: "2-dig
 /** Polling status; "Updated" is the browser's real clock, unlike the simulated times elsewhere. */
 function LiveIndicator({ visible, failing, updatedAt }: { visible: boolean; failing: boolean; updatedAt: Date | null }) {
   const state = failing
-    ? { label: "Update failed", dot: "bg-amber-500", text: "text-amber-800" }
+    ? { label: "Update failed", dot: "bg-amber-500", text: "text-awaiting" }
     : visible
-      ? { label: "Live", dot: "bg-teal-500 animate-pulse", text: "text-teal-800" }
-      : { label: "Paused", dot: "bg-slate-400", text: "text-slate-500" };
+      ? { label: "Live", dot: "bg-ready animate-pulse", text: "text-ready" }
+      : { label: "Paused", dot: "bg-ink-muted", text: "text-ink-muted" };
   return (
     <span className="flex items-center gap-2 text-xs">
       <span className={`flex items-center gap-1.5 font-medium ${state.text}`}>
         <span className={`h-2 w-2 rounded-full ${state.dot}`} aria-hidden />
         {state.label}
       </span>
-      {updatedAt && <span className="tabular-nums text-slate-500">Updated {CLOCK.format(updatedAt)}</span>}
+      {updatedAt && (
+        <span className="text-ink-muted">
+          Updated <span className="font-mono tabular-nums">{CLOCK.format(updatedAt)}</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -269,30 +275,36 @@ function QueueEntry({
   const driver = driverId ? snapshot.drivers.find((d) => d.id === driverId) : undefined;
   const chip = STATUS_CHIP[entry.status];
   const failed = entry.checks.filter((c) => c.result === "fail").length;
+  const ready = entry.status === "ready_for_approval";
 
   return (
     <li
-      className={`px-5 py-3 transition-colors duration-700 ${
-        change ? "bg-amber-50 shadow-[inset_3px_0_0_0_var(--color-amber-400)]" : ""
+      id={`queue-${entry.jobId}`}
+      className={`px-6 py-5 transition-colors duration-700 ${
+        change
+          ? "bg-awaiting-soft shadow-[inset_4px_0_0_0_var(--color-awaiting)]"
+          : ready
+            ? "bg-ready-soft shadow-[inset_4px_0_0_0_var(--color-ready)]"
+            : ""
       }`}
     >
       {change && (
-        <p className="mb-1.5 ml-10 text-xs font-medium text-amber-800">
+        <p className="mb-2 ml-11 text-xs font-semibold text-awaiting">
           Status changed: {STATUS_CHIP[change.from].label} → {STATUS_CHIP[change.to].label}
         </p>
       )}
-      <div className="flex items-start gap-3">
-        <span className="mt-0.5 w-7 shrink-0 text-right font-mono text-sm font-semibold text-slate-400">
+      <div className="flex items-start gap-4">
+        <span className="mt-0.5 w-7 shrink-0 text-right font-mono text-sm font-semibold text-ink-muted">
           #{entry.rank}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="min-w-0 text-sm text-slate-900">
+            <p className="min-w-0 text-sm text-navy">
               <span className="font-mono font-semibold">{entry.jobId}</span>
-              {job && <span className="ml-2 font-mono text-xs text-slate-500">{job.container}</span>}
+              {job && <span className="ml-2 font-mono text-xs text-ink-muted">{job.container}</span>}
               <span className="ml-2 text-slate-700">
                 {job?.cargoDescription ?? "Cargo not stated"}
-                <span className="text-slate-400"> · </span>
+                <span className="text-ink-muted"> · </span>
                 {customer?.name ?? job?.customerId ?? "Unknown customer"}
               </span>
             </p>
@@ -303,56 +315,73 @@ function QueueEntry({
                 <TierBadge tier={entry.criticalityTier} />
               )}
               <span title={entry.status}>
-                <Badge tone={chip.tone}>{chip.label}</Badge>
+                <Badge tone={chip.tone} solid={ready}>
+                  {ready && <span aria-hidden>✓</span>}
+                  {chip.label}
+                </Badge>
               </span>
             </div>
           </div>
 
-          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs xl:grid-cols-4">
-            <Field label="Harm deadline" value={formatDateTime(entry.harmDeadline)} />
+          <p className="mt-2 text-sm text-navy">
+            <span className="eyebrow mr-2 text-rust">Next action</span>
+            <span className="font-semibold">{humanizeCode(entry.nextAction)}</span>
+          </p>
+
+          <dl className="mt-2 grid grid-cols-3 gap-x-4 gap-y-1 text-xs">
             <Field
               label="Blocker"
-              value={entry.blocker ? humanize(entry.blocker) : "None"}
-              tone={entry.blocker ? "text-red-700" : undefined}
+              value={entry.blocker ? humanizeCode(entry.blocker) : "None"}
+              tone={entry.blocker ? "text-blocked" : undefined}
             />
-            <Field label="Owner" value={humanize(entry.owner)} />
-            <Field label="Next action" value={humanize(entry.nextAction)} />
+            <Field label="Who resolves it" value={humanizeCode(entry.owner)} />
+            <Field label="Harm deadline" value={formatDateTime(entry.harmDeadline)} mono />
           </dl>
 
-          {(driverId || entry.proposal) && (
-            <div className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-700">
-              <p>
-                <span className="text-slate-500">Proposed driver:</span>{" "}
-                <span className="font-medium">{driver ? `${driver.name} (${driverId})` : driverId}</span>
-                {entry.proposal && (
-                  <>
-                    <span className="text-slate-400"> · </span>
-                    Depart {formatTime(entry.proposal.departAt)} · Pickup {formatTime(entry.proposal.pickupAt)} ·
-                    Complete by {formatTime(entry.proposal.completeBy)} · {entry.proposal.travelMinutes} min travel
-                  </>
-                )}
-              </p>
-              {entry.proposal && <p className="mt-0.5 text-[11px] text-slate-500">{estimatesLabel}</p>}
+          {needsDriverReport(entry.nextAction) && (
+            <div className="mt-2">
+              <JumpLink href="#driver-report">Record driver report →</JumpLink>
             </div>
           )}
 
-          <details className="mt-2 text-xs">
-            <summary className="cursor-pointer select-none text-slate-500 hover:text-slate-700">
+          {(driverId || entry.proposal) && (
+            <div className={`mt-3 rounded-md px-3 py-2 text-xs text-slate-700 ${ready ? "bg-white" : "bg-paper"}`}>
+              <p>
+                <span className="text-ink-muted">Proposed driver:</span>{" "}
+                <span className="font-semibold text-navy">{driver ? `${driver.name} (${driverId})` : driverId}</span>
+                {entry.proposal && (
+                  <>
+                    <span className="text-ink-muted"> · </span>
+                    <span className="font-mono">
+                      Depart {formatTime(entry.proposal.departAt)} · Pickup {formatTime(entry.proposal.pickupAt)} ·
+                      Complete by {formatTime(entry.proposal.completeBy)}
+                    </span>{" "}
+                    · {entry.proposal.travelMinutes} min travel
+                  </>
+                )}
+              </p>
+              {entry.proposal && <p className="mt-0.5 text-[11px] text-ink-muted">{estimatesLabel}</p>}
+            </div>
+          )}
+
+          <details className="mt-1 text-xs">
+            <summary className="inline-flex min-h-11 cursor-pointer select-none items-center text-ink-muted hover:text-navy">
               Checks ({entry.checks.length}
               {failed > 0 && `, ${failed} failed`})
             </summary>
             {entry.checks.length === 0 ? (
-              <p className="mt-1.5 italic text-slate-400">No checks reported.</p>
+              <p className="mt-1.5 italic text-ink-muted">No checks reported.</p>
             ) : (
               <ul className="mt-1.5 space-y-1">
                 {entry.checks.map((check, i) => (
                   <li key={`${check.label}-${i}`} className="flex gap-1.5">
-                    <span className={`w-3 shrink-0 font-semibold ${CHECK_ICON[check.result].className}`}>
+                    <span className={`w-3 shrink-0 font-semibold ${CHECK_ICON[check.result].className}`} aria-hidden>
                       {CHECK_ICON[check.result].symbol}
                     </span>
+                    <span className="sr-only">{CHECK_RESULT_LABEL[check.result]}:</span>
                     <span>
                       <span className="font-medium text-slate-700">{check.label}:</span>{" "}
-                      <span className="text-slate-500">{check.detail}</span>
+                      <span className="text-ink-muted">{check.detail}</span>
                     </span>
                   </li>
                 ))}
@@ -365,11 +394,11 @@ function QueueEntry({
   );
 }
 
-function Field({ label, value, tone }: { label: string; value: string; tone?: string }) {
+function Field({ label, value, tone, mono = false }: { label: string; value: string; tone?: string; mono?: boolean }) {
   return (
     <div className="min-w-0">
-      <dt className="text-slate-500">{label}</dt>
-      <dd className={`font-medium ${tone ?? "text-slate-800"}`}>{value}</dd>
+      <dt className="text-ink-muted">{label}</dt>
+      <dd className={`font-medium ${mono ? "font-mono" : ""} ${tone ?? "text-navy"}`}>{value}</dd>
     </div>
   );
 }

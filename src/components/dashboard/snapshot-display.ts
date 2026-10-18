@@ -48,6 +48,17 @@ export const REPORT_SOURCE_LABEL: Record<DriverReportSource, string> = {
   scenario: "Scenario data",
 };
 
+/** Backend codes such as "call_terminal_to_reconfirm" → "Call terminal to reconfirm". */
+export function humanizeCode(code: string): string {
+  const words = code.replaceAll("_", " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/** True when the queue is waiting on a driver report, e.g. "wait_for_reefer_driver_report". */
+export function needsDriverReport(nextAction: string): boolean {
+  return nextAction.includes("driver_report");
+}
+
 export const RECOVERY_STATUS_LABEL: Record<RecoveryStatus, string> = {
   ready_for_approval: "Ready for approval",
   awaiting_verification: "Awaiting verification",

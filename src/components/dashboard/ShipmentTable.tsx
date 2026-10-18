@@ -39,6 +39,8 @@ export function ShipmentTable({
 
   return (
     <Panel
+      id="shipments"
+      eyebrow="Container moves"
       title="Shipments"
       subtitle={
         reconcilingCount > 0
@@ -48,19 +50,19 @@ export function ShipmentTable({
     >
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-3 py-2.5 font-medium">Container</th>
-              <th className="px-3 py-2.5 font-medium">Customer · terminal</th>
-              <th className="px-3 py-2.5 font-medium">Priority</th>
-              <th className="px-3 py-2.5 font-medium">Tier</th>
-              <th className="px-3 py-2.5 font-medium">Deadline</th>
-              <th className="px-3 py-2.5 font-medium">Appointment</th>
-              <th className="px-3 py-2.5 font-medium">Blocker</th>
-              <th className="px-3 py-2.5 font-medium">Next action</th>
+          <thead className="border-b border-line bg-paper text-ink-muted">
+            <tr className="[&>th]:eyebrow [&>th]:px-3 [&>th]:py-3">
+              <th>Container</th>
+              <th>Customer · terminal</th>
+              <th>Priority</th>
+              <th>Tier</th>
+              <th>Deadline</th>
+              <th>Appointment</th>
+              <th>Blocker</th>
+              <th>Next action</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-line">
             {jobs.map((job) => {
               const terminal = terminals.find((t) => t.id === job.terminalId);
               const status = getJobStatus(job, terminal, drivers);
@@ -70,12 +72,12 @@ export function ShipmentTable({
               const canReconcile = appt.status === "unverified" && terminal?.portalStatus === "reconciling";
               const pre = appt.preOutage;
               return (
-                <tr key={job.id} className={appt.status === "unverified" ? "bg-amber-50/40" : undefined}>
+                <tr key={job.id} className={appt.status === "unverified" ? "bg-awaiting-soft/50" : undefined}>
                   <td className="px-3 py-3">
-                    <span className="font-mono text-xs text-slate-900">{job.container}</span>
+                    <span className="font-mono text-xs text-navy">{job.container}</span>
                     <p
                       className={`mt-0.5 min-w-36 max-w-52 text-[11px] leading-snug ${
-                        isConsequenceStated(extras.consequence) ? "text-slate-600" : "italic text-slate-400"
+                        isConsequenceStated(extras.consequence) ? "text-slate-600" : "italic text-ink-muted"
                       }`}
                     >
                       {extras.consequence}
@@ -88,7 +90,7 @@ export function ShipmentTable({
                   </td>
                   <td className="px-3 py-3 text-slate-700">
                     {customers.find((c) => c.id === job.customerId)?.name}
-                    <p className="mt-0.5 text-xs text-slate-500">{terminal?.shortName}</p>
+                    <p className="mt-0.5 text-xs text-ink-muted">{terminal?.shortName}</p>
                   </td>
                   <td className="px-3 py-3">
                     <Badge tone={PRIORITY_TONE[job.priority]}>{job.priority}</Badge>
@@ -97,11 +99,12 @@ export function ShipmentTable({
                     <TierBadge tier={extras.tier} stacked />
                   </td>
                   <td className="px-3 py-3 tabular-nums">
-                    <span className={isUrgent(job, now) ? "font-semibold text-red-700" : "text-slate-700"}>
+                    <span className={`font-mono ${isUrgent(job, now) ? "font-semibold text-blocked" : "text-slate-700"}`}>
                       {formatTime(job.deadline)}
                     </span>
+                    {isUrgent(job, now) && <span className="ml-1.5 text-[11px] font-semibold text-blocked">Urgent</span>}
                     {extras.harmDeadline !== job.deadline && (
-                      <p className="mt-0.5 whitespace-nowrap text-[11px] text-slate-500">
+                      <p className="mt-0.5 whitespace-nowrap text-[11px] text-ink-muted">
                         Harm by {formatTime(extras.harmDeadline)}
                       </p>
                     )}
@@ -110,22 +113,22 @@ export function ShipmentTable({
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-2">
                       <Badge tone={badge.tone}>{badge.label}</Badge>
-                      <span className="tabular-nums text-xs text-slate-600">{formatWindow(appt.window)}</span>
+                      <span className="font-mono tabular-nums text-xs text-slate-600">{formatWindow(appt.window)}</span>
                     </div>
                     {pre && appt.status !== "confirmed" && (
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-ink-muted">
                         Pre-outage: {pre.status} {formatWindow(pre.window)}
                       </p>
                     )}
                     {pre && appt.status === "confirmed" && (
-                      <p className="mt-1 text-xs text-teal-700">Reconfirmed by dispatcher</p>
+                      <p className="mt-1 text-xs text-ready">Reconfirmed by dispatcher</p>
                     )}
                   </td>
                   <td className="px-3 py-3">
                     {status.blocker ? (
                       <Badge tone={status.blocker.tone}>{status.blocker.label}</Badge>
                     ) : (
-                      <span className="text-xs text-slate-400">None</span>
+                      <span className="text-xs text-ink-muted">None</span>
                     )}
                   </td>
                   <td className="px-3 py-3 text-xs text-slate-700">

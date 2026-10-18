@@ -20,15 +20,21 @@ export function LiveDriverPanel({ snapshot, children }: { snapshot: StateRespons
   const reports = snapshot ? snapshotDriverReports(snapshot) : [];
   return (
     <Panel
+      eyebrow="Live roster"
       title="Drivers"
       subtitle="From the live backend snapshot. A report updates status only and stays unverified."
     >
-      {!snapshot && <p className="px-5 py-8 text-center text-sm text-slate-500">Loading drivers…</p>}
+      {children}
+      {!snapshot && (
+        <p role="status" className="px-6 py-10 text-center text-sm text-ink-muted">
+          Loading drivers…
+        </p>
+      )}
       {snapshot && snapshot.drivers.length === 0 && (
-        <p className="px-5 py-8 text-center text-sm text-slate-500">No drivers in the snapshot.</p>
+        <p className="px-6 py-10 text-center text-sm text-ink-muted">No drivers in the snapshot.</p>
       )}
       {snapshot && snapshot.drivers.length > 0 && (
-        <ul className="divide-y divide-slate-100">
+        <ul className="divide-y divide-line">
           {snapshot.drivers.map((driver) => (
             <DriverRow
               key={driver.id}
@@ -39,7 +45,6 @@ export function LiveDriverPanel({ snapshot, children }: { snapshot: StateRespons
           ))}
         </ul>
       )}
-      {children}
     </Panel>
   );
 }
@@ -60,17 +65,17 @@ function DriverRow({
   const note = report?.note || driver.lastNote;
 
   return (
-    <li className="px-5 py-3">
+    <li className="px-6 py-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 text-sm font-medium text-slate-900">
-          {driver.name} <span className="font-mono text-xs font-normal text-slate-500">{driver.id}</span>
+        <p className="min-w-0 text-sm font-medium text-navy">
+          {driver.name} <span className="font-mono text-xs font-normal text-ink-muted">{driver.id}</span>
         </p>
         <Badge tone={availability.tone}>{availability.label}</Badge>
       </div>
       {driver.equipment.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {driver.equipment.map((equipment) => (
-            <span key={equipment} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
+            <span key={equipment} className="rounded bg-paper-deep px-1.5 py-0.5 text-[11px] text-slate-600">
               {EQUIPMENT_LABELS[equipment]}
             </span>
           ))}
@@ -78,42 +83,42 @@ function DriverRow({
       )}
       <dl className="mt-1.5 space-y-0.5 text-xs text-slate-600">
         <div>
-          <dt className="inline text-slate-500">Available from </dt>
+          <dt className="inline text-ink-muted">Available from </dt>
           <dd className="inline">
             {driver.availableFrom ? formatSnapshotDateTime(driver.availableFrom) : "Unknown"}
-            {fromReason && <span className="text-slate-400"> · {fromReason}</span>}
+            {fromReason && <span className="text-ink-muted"> · {fromReason}</span>}
           </dd>
         </div>
         <div>
-          <dt className="inline text-slate-500">Location </dt>
+          <dt className="inline text-ink-muted">Location </dt>
           <dd className="inline">
             {driver.location || "Unknown"}
-            {locationReason && <span className="text-slate-400"> · {locationReason}</span>}
+            {locationReason && <span className="text-ink-muted"> · {locationReason}</span>}
           </dd>
         </div>
         <div>
-          <dt className="inline text-slate-500">Last report </dt>
+          <dt className="inline text-ink-muted">Last report </dt>
           <dd className="inline">
             {driver.lastReport ? (
               <>
                 <span className="font-mono tabular-nums">{formatTime(driver.lastReport)}</span>
-                <span className="text-slate-400"> · {formatSnapshotDate(driver.lastReport)}</span>
+                <span className="text-ink-muted"> · {formatSnapshotDate(driver.lastReport)}</span>
               </>
             ) : (
               "Not reported"
             )}
-            {reportReason && <span className="text-slate-400"> · {reportReason}</span>}
+            {reportReason && <span className="text-ink-muted"> · {reportReason}</span>}
           </dd>
         </div>
       </dl>
       {(report || driver.lastReport) && (
-        <div className="mt-2 rounded-md bg-amber-50 px-2.5 py-2">
+        <div className="mt-2 rounded-md bg-awaiting-soft px-2.5 py-2">
           <div className="flex flex-wrap items-center gap-1.5">
             <Badge tone="amber">Driver-reported, unverified</Badge>
             {report && <span className="text-[11px] text-slate-600">{REPORT_SOURCE_LABEL[report.source]}</span>}
           </div>
           {report && (
-            <p className="mt-1 text-[11px] text-slate-500">Reported {formatSnapshotDateTime(report.reportedAt)}</p>
+            <p className="mt-1 text-[11px] text-ink-muted">Reported {formatSnapshotDateTime(report.reportedAt)}</p>
           )}
           <p className="mt-1 text-xs text-slate-700">{note || "No note"}</p>
         </div>

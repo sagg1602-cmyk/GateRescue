@@ -15,32 +15,34 @@ import { Badge, Button, Panel } from "./ui";
 const GROUPS: { category: RecommendationCategory; title: string; description: string; header: string; dot: string }[] = [
   {
     category: "ready",
-    title: "Ready",
+    title: "Ready for approval",
     description: "All checks pass. Approve to record dispatcher intent.",
-    header: "text-teal-800",
-    dot: "bg-teal-500",
+    header: "text-ready",
+    dot: "bg-ready",
   },
   {
     category: "awaiting-verification",
     title: "Awaiting verification",
     description: "Driver tentatively held; appointment must be reconfirmed first.",
-    header: "text-amber-800",
+    header: "text-awaiting",
     dot: "bg-amber-500",
   },
   {
     category: "blocked",
     title: "Blocked",
     description: "At least one check failed. Resolve the blocker, then regenerate.",
-    header: "text-red-700",
-    dot: "bg-red-500",
+    header: "text-blocked",
+    dot: "bg-blocked",
   },
 ];
 
 const CHECK_ICON: Record<RecoveryCheck["result"], { symbol: string; className: string }> = {
-  pass: { symbol: "✓", className: "text-teal-600" },
-  fail: { symbol: "✕", className: "text-red-600" },
-  skip: { symbol: "–", className: "text-slate-400" },
+  pass: { symbol: "✓", className: "text-ready" },
+  fail: { symbol: "✕", className: "text-blocked" },
+  skip: { symbol: "–", className: "text-ink-muted" },
 };
+
+const CHECK_RESULT_LABEL: Record<RecoveryCheck["result"], string> = { pass: "Pass", fail: "Fail", skip: "Skipped" };
 
 export function RecoveryPanel({
   plan,
@@ -66,32 +68,35 @@ export function RecoveryPanel({
 
   return (
     <Panel
+      id="recovery-plan"
+      eyebrow="Local simulation"
       title="Recovery plan"
       subtitle="Simulated locally with a simple deterministic heuristic. Not an optimizer; approvals do not notify drivers or move cargo."
       actions={
-        <Button variant="primary" onClick={onGenerate}>
+        <Button variant={plan?.status === "current" ? "secondary" : "primary"} onClick={onGenerate}>
           {plan ? "Regenerate plan" : "Generate recovery plan"}
         </Button>
       }
     >
       {!plan && (
-        <div className="px-5 py-10 text-center text-sm text-slate-500">
+        <div className="px-6 py-12 text-center text-sm text-ink-muted">
           No recommendations yet. Generate a plan to check appointments, container availability, holds, equipment and
           driver time conflicts for every unapproved job.
         </div>
       )}
 
       {plan && (
-        <div className="px-5 py-4">
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+        <div className="px-6 py-5">
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-xs text-ink-muted">
             <span>
-              Plan #{plan.id} · generated {formatTime(plan.generatedAt)} (sim) · inputs v{plan.inputsVersion}
+              Plan <span className="font-mono">#{plan.id}</span> · generated{" "}
+              <span className="font-mono">{formatTime(plan.generatedAt)}</span> (sim) · inputs v{plan.inputsVersion}
             </span>
             {upToDate && <Badge tone="teal">Current</Badge>}
           </div>
 
           {invalidated && (
-            <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <div className="mb-4 rounded-lg border border-awaiting/30 bg-awaiting-soft px-4 py-3 text-sm text-awaiting">
               <p className="font-semibold">Recommendations invalidated</p>
               <p className="mt-0.5 text-xs">
                 Operational inputs changed ({plan.invalidatedReason}). Approvals are disabled until you regenerate the
@@ -100,21 +105,25 @@ export function RecoveryPanel({
             </div>
           )}
 
-          <div className={`grid grid-cols-3 gap-4 ${invalidated ? "opacity-60" : ""}`}>
+          <div className="grid grid-cols-3 gap-4">
             {GROUPS.map((group) => {
               const recs = plan.recommendations.filter((r) => r.category === group.category);
+              const ready = group.category === "ready";
               return (
-                <div key={group.category} className="min-w-0">
-                  <div className="mb-2">
+                <div
+                  key={group.category}
+                  className={`min-w-0 rounded-card p-3 ${ready ? "bg-ready-soft ring-1 ring-inset ring-ready/40" : "bg-paper"}`}
+                >
+                  <div className="mb-3">
                     <p className={`flex items-center gap-1.5 text-sm font-semibold ${group.header}`}>
                       <span className={`h-2 w-2 rounded-full ${group.dot}`} aria-hidden />
                       {group.title}
-                      <span className="font-normal text-slate-500">({recs.length})</span>
+                      <span className="font-normal text-ink-muted">({recs.length})</span>
                     </p>
-                    <p className="text-xs text-slate-500">{group.description}</p>
+                    <p className="mt-0.5 text-xs text-ink-muted">{group.description}</p>
                   </div>
                   <div className="max-h-[30rem] space-y-2 overflow-y-auto pr-1">
-                    {recs.length === 0 && <p className="text-xs italic text-slate-400">None</p>}
+                    {recs.length === 0 && <p className="text-xs italic text-ink-muted">None</p>}
                     {recs.map((rec) => (
                       <RecommendationCard
                         key={rec.jobId}
@@ -156,14 +165,21 @@ function RecommendationCard({
   onApprove: (jobId: string) => void;
 }) {
   if (!job) return null;
-  const border =
-    rec.category === "ready" ? "border-teal-200" : rec.category === "blocked" ? "border-red-200" : "border-amber-300";
+  const ready = rec.category === "ready";
+  const border = ready ? "border-2 border-ready" : rec.category === "blocked" ? "border-blocked/30" : "border-awaiting/30";
   return (
     <article className={`rounded-lg border bg-white p-3 ${border}`}>
+      {ready && !rec.approved && (
+        <p className="mb-2">
+          <Badge tone="teal" solid>
+            <span aria-hidden>✓</span> Ready for approval
+          </Badge>
+        </p>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-mono text-xs font-semibold text-slate-900">{job.container}</p>
-          <p className="truncate text-xs text-slate-500">
+          <p className="font-mono text-xs font-semibold text-navy">{job.container}</p>
+          <p className="truncate text-xs text-ink-muted">
             {customers.find((c) => c.id === job.customerId)?.name} · {formatWindow(job.appointment.window)}
           </p>
         </div>
@@ -177,22 +193,25 @@ function RecommendationCard({
       </div>
       {driver && (
         <p className="mt-2 text-xs text-slate-800">
-          <span className="text-slate-500">{rec.category === "ready" ? "Proposed:" : "Tentative:"}</span>{" "}
+          <span className="text-ink-muted">{rec.category === "ready" ? "Proposed:" : "Tentative:"}</span>{" "}
           <span className="font-medium">{driver.name}</span>
         </p>
       )}
       <p className="mt-1.5 text-xs leading-relaxed text-slate-600">{rec.explanation}</p>
       <details className="mt-2 text-xs">
-        <summary className="cursor-pointer select-none text-slate-500 hover:text-slate-700">Checks</summary>
-        <ul className="mt-1.5 space-y-1">
+        <summary className="inline-flex min-h-11 cursor-pointer select-none items-center text-ink-muted hover:text-navy">
+          Checks
+        </summary>
+        <ul className="space-y-1">
           {rec.checks.map((check) => (
             <li key={check.label} className="flex gap-1.5">
-              <span className={`w-3 shrink-0 font-semibold ${CHECK_ICON[check.result].className}`}>
+              <span className={`w-3 shrink-0 font-semibold ${CHECK_ICON[check.result].className}`} aria-hidden>
                 {CHECK_ICON[check.result].symbol}
               </span>
+              <span className="sr-only">{CHECK_RESULT_LABEL[check.result]}:</span>
               <span>
                 <span className="font-medium text-slate-700">{check.label}:</span>{" "}
-                <span className="text-slate-500">{check.detail}</span>
+                <span className="text-ink-muted">{check.detail}</span>
               </span>
             </li>
           ))}
@@ -200,7 +219,7 @@ function RecommendationCard({
       </details>
       {rec.category === "ready" &&
         (rec.approved ? (
-          <p className="mt-2 rounded bg-teal-50 px-2 py-1 text-xs font-medium text-teal-800">
+          <p className="mt-2 rounded bg-ready-soft px-2 py-1.5 text-xs font-semibold text-ready">
             ✓ Dispatcher approved {job.approval ? `at ${formatTime(job.approval.approvedAt)}` : ""} (simulated) — not
             dispatched, not delivered
           </p>

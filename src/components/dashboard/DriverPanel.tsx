@@ -17,36 +17,48 @@ const STALE_REPORT_MINUTES = 60;
 
 export function DriverPanel({ drivers, now, children }: { drivers: Driver[]; now: string; children?: React.ReactNode }) {
   return (
-    <Panel title="Drivers" subtitle="Status from the most recent check-in (synthetic roster)">
-      <ul className="divide-y divide-slate-100">
+    <Panel eyebrow="Synthetic roster" title="Drivers" subtitle="Status from the most recent check-in">
+      {children}
+      <ul className="divide-y divide-line">
         {drivers.map((driver) => {
           const availability = AVAILABILITY_LABEL[driver.availability];
           const age = driver.lastReport ? toMinutes(now) - toMinutes(driver.lastReport) : null;
           const stale = age === null || age > STALE_REPORT_MINUTES;
           const commitments = driver.busy.filter((slot) => slot.jobId);
           return (
-            <li key={driver.id} className="px-5 py-3">
+            <li key={driver.id} className="px-6 py-4">
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-medium text-slate-900">{driver.name}</p>
+                <p className="text-sm font-medium text-navy">{driver.name}</p>
                 <Badge tone={availability.tone}>{availability.label}</Badge>
               </div>
               <div className="mt-1.5 flex flex-wrap gap-1">
                 {driver.equipment.map((eq) => (
-                  <span key={eq} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
+                  <span key={eq} className="rounded bg-paper-deep px-1.5 py-0.5 text-[11px] text-slate-600">
                     {EQUIPMENT_LABELS[eq]}
                   </span>
                 ))}
               </div>
-              <p className={`mt-1.5 text-xs ${stale ? "font-medium text-amber-700" : "text-slate-500"}`}>
-                {driver.lastReport ? `Last report ${formatTime(driver.lastReport)} · ${age} min ago` : "No report yet"}
+              <p className={`mt-1.5 text-xs ${stale ? "font-medium text-awaiting" : "text-ink-muted"}`}>
+                {driver.lastReport ? (
+                  <>
+                    Last report <span className="font-mono">{formatTime(driver.lastReport)}</span> · {age} min ago
+                  </>
+                ) : (
+                  "No report yet"
+                )}
                 {driver.lastReport && stale ? " · stale" : ""}
-                {driver.availability !== "unreachable" && driver.availableFrom && ` · free from ${formatTime(driver.availableFrom)}`}
+                {driver.availability !== "unreachable" && driver.availableFrom && (
+                  <>
+                    {" "}
+                    · free from <span className="font-mono">{formatTime(driver.availableFrom)}</span>
+                  </>
+                )}
               </p>
-              <p className="mt-0.5 truncate text-xs italic text-slate-400" title={driver.lastNote}>
+              <p className="mt-0.5 truncate text-xs italic text-ink-muted" title={driver.lastNote}>
                 “{driver.lastNote}”
               </p>
               {commitments.length > 0 && (
-                <p className="mt-1 text-xs text-teal-700">
+                <p className="mt-1 text-xs text-ready">
                   Approved (sim): {commitments.map((c) => `${c.label} ${formatTime(c.start)}`).join(", ")}
                 </p>
               )}
@@ -54,7 +66,6 @@ export function DriverPanel({ drivers, now, children }: { drivers: Driver[]; now
           );
         })}
       </ul>
-      {children}
     </Panel>
   );
 }

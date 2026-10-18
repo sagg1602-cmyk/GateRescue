@@ -17,7 +17,7 @@ export function AccessGate({ children }: { children: ReactNode }) {
 
   if (status === "checking") {
     return (
-      <p role="status" className="mb-5 rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm text-slate-500">
+      <p role="status" className="rounded-card border border-line bg-white px-6 py-4 text-sm text-ink-muted">
         Checking the live backend…
       </p>
     );
@@ -27,14 +27,14 @@ export function AccessGate({ children }: { children: ReactNode }) {
     return (
       <div
         role="status"
-        className="mb-5 flex items-center justify-between gap-4 rounded-xl border border-amber-300 bg-amber-50 px-5 py-3 text-sm text-amber-900"
+        className="flex items-center justify-between gap-4 rounded-card border border-awaiting/30 bg-awaiting-soft px-6 py-4 text-sm text-awaiting"
       >
         <p>
           <span className="font-semibold">Live backend unavailable, showing local synthetic demo.</span>{" "}
-          Everything below runs in this browser only.
+          Everything on this page runs in this browser only.
         </p>
         <Button size="sm" onClick={recheck}>
-          Retry
+          Retry connection
         </Button>
       </div>
     );
@@ -90,15 +90,15 @@ function AccessCodePrompt({
 
   return (
     <Panel
-      className="mb-5"
-      title="Live recovery queue"
+      eyebrow="Optional"
+      title="Connect the live backend"
       subtitle={
         expired
           ? "Your session expired. Enter the demo access code again to reload the backend queue."
-          : "Enter the demo access code from the backend owner to load the backend's ranked queue. The local demo below works without it."
+          : "Enter the demo access code from the backend owner to load the backend's ranked queue. The local demo on this page works without it."
       }
     >
-      <form onSubmit={submit} className="flex flex-wrap items-end gap-3 px-5 py-4">
+      <form onSubmit={submit} className="flex flex-wrap items-end gap-3 px-6 py-5">
         <label className="flex min-w-64 flex-col gap-1 text-xs font-medium text-slate-600">
           Access code
           <input
@@ -111,14 +111,14 @@ function AccessCodePrompt({
             onChange={(e) => setCode(e.target.value)}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "access-code-error" : undefined}
-            className="rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="min-h-11 rounded-md border border-[#8a877e] bg-white px-3 py-2 text-sm text-navy focus:border-ready focus:outline-none focus:ring-2 focus:ring-ready/30"
           />
         </label>
         <Button type="submit" variant="primary" disabled={submitting || !code}>
           {submitting ? "Checking…" : "Connect"}
         </Button>
         {error && (
-          <p id="access-code-error" role="alert" className="w-full text-xs text-red-700">
+          <p id="access-code-error" role="alert" className="w-full text-xs text-blocked">
             {error}
           </p>
         )}

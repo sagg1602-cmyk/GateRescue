@@ -13,24 +13,10 @@ import { getJobStatus, type Tone } from "@/lib/demo/job-status";
 import { sortJobsForPlanning } from "@/lib/demo/recovery-heuristic";
 import { compareIso } from "@/lib/shared/datetime";
 import { formatTime } from "@/lib/demo/time";
+import { ActivityItem } from "./ActivityLog";
 import { Badge, Button, Panel, SyntheticBadge } from "./ui";
 
 const PRIORITY_TONE: Record<Priority, Tone> = { critical: "red", high: "amber", normal: "neutral" };
-
-const KIND_LABEL: Record<ActivityEvent["kind"], string> = {
-  system: "System",
-  terminal: "Terminal",
-  driver: "Driver",
-  plan: "Plan",
-  dispatcher: "Dispatcher",
-};
-
-const SEVERITY_DOT: Record<ActivityEvent["severity"], string> = {
-  info: "bg-slate-400",
-  success: "bg-teal-500",
-  warning: "bg-amber-500",
-  critical: "bg-red-600",
-};
 
 interface JobRow {
   id: string;
@@ -123,15 +109,15 @@ function JobSection({ title, subtitle, empty, rows }: { title: string; subtitle:
   return (
     <Panel title={title} subtitle={subtitle}>
       {rows.length === 0 ? (
-        <p className="px-5 py-8 text-center text-sm italic text-slate-400">{empty}</p>
+        <p className="px-5 py-8 text-center text-sm italic text-ink-muted">{empty}</p>
       ) : (
-        <ul className="max-h-[32rem] divide-y divide-slate-100 overflow-y-auto">
+        <ul className="max-h-[32rem] divide-y divide-line overflow-y-auto">
           {rows.map((row) => (
             <li key={row.id} className="px-5 py-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-mono text-xs font-semibold whitespace-nowrap text-slate-900">{row.container}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{row.customer}</p>
+                  <p className="font-mono text-xs font-semibold whitespace-nowrap text-navy">{row.container}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">{row.customer}</p>
                 </div>
                 <Badge tone={PRIORITY_TONE[row.priority]}>{row.priority}</Badge>
               </div>
@@ -201,13 +187,13 @@ export function ReconciliationView({
         reason: (
           <>
             <p>
-              <span className="text-slate-500">Blocker:</span> {blocker}
+              <span className="text-ink-muted">Blocker:</span> {blocker}
             </p>
             <p>
-              <span className="text-slate-500">Who resolves it:</span> {whoMustResolve(job, jobTerminal)}
+              <span className="text-ink-muted">Who resolves it:</span> {whoMustResolve(job, jobTerminal)}
             </p>
             <p>
-              <span className="text-slate-500">Next:</span> {status.nextAction}
+              <span className="text-ink-muted">Next:</span> {status.nextAction}
             </p>
           </>
         ),
@@ -220,11 +206,11 @@ export function ReconciliationView({
 
   return (
     <div>
-      <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <p className="text-xs font-medium uppercase tracking-wider text-slate-500">Back to normal</p>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{situation}</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="eyebrow text-rust">Back to normal</p>
+          <h1 className="mt-2 font-display text-4xl font-semibold leading-tight tracking-tight text-navy">{situation}</h1>
+          <p className="mt-1 text-sm text-ink-muted">
             Fictional terminals, customers and drivers. Restored access leaves every job open for review.
           </p>
         </div>
@@ -237,7 +223,7 @@ export function ReconciliationView({
         </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <JobSection
           title={`Approved (${approved.length})`}
           subtitle="Jobs with a dispatcher approval"
@@ -258,27 +244,14 @@ export function ReconciliationView({
         />
       </div>
 
-      <div className="mt-5">
+      <div className="mt-6">
         <Panel title="Activity timeline" subtitle="Oldest first · simulated clock times">
           {chronological.length === 0 ? (
-            <p className="px-5 py-8 text-center text-sm italic text-slate-400">No activity has been recorded.</p>
+            <p className="px-5 py-8 text-center text-sm italic text-ink-muted">No activity has been recorded.</p>
           ) : (
-            <ol className="max-h-[28rem] overflow-y-auto px-5 py-3">
+            <ol className="max-h-[28rem] overflow-y-auto px-6 py-4">
               {chronological.map((event) => (
-                <li key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
-                  <time dateTime={event.at} className="w-11 shrink-0 pt-px font-mono text-xs tabular-nums text-slate-500">
-                    {formatTime(event.at)}
-                  </time>
-                  <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${SEVERITY_DOT[event.severity]}`} aria-hidden />
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">{KIND_LABEL[event.kind]}</p>
-                    <p
-                      className={`text-xs leading-relaxed ${event.severity === "critical" ? "font-medium text-red-700" : "text-slate-700"}`}
-                    >
-                      {event.message}
-                    </p>
-                  </div>
-                </li>
+                <ActivityItem key={event.id} event={event} />
               ))}
             </ol>
           )}

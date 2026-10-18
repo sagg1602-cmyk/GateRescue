@@ -36,7 +36,7 @@ const D02_EXAMPLE_CALL = {
 } as const satisfies CheckInInput;
 
 const inputClass =
-  "w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/20";
+  "min-h-11 w-full rounded-md border border-[#8a877e] bg-white px-3 py-2 text-sm text-navy placeholder:text-ink-muted focus:border-ready focus:outline-none focus:ring-2 focus:ring-ready/30";
 
 const isReportable = (value: DriverAvailability): value is ReportableAvailability =>
   (REPORTABLE_AVAILABILITIES as readonly string[]).includes(value);
@@ -160,6 +160,12 @@ export function DriverCheckInForm({
     const pending = onSubmit({ driverId, availability, availableFrom, note });
     if (!pending) {
       setNote("");
+      setError(null);
+      setOutcome({
+        driverName: drivers.find((d) => d.id === driverId)?.name ?? driverId,
+        duplicate: false,
+        planInvalidated: false,
+      });
       return;
     }
     setSubmitting(true);
@@ -175,31 +181,36 @@ export function DriverCheckInForm({
   }
 
   return (
-    <form className="border-t border-slate-200 bg-slate-50/70 px-5 py-4" onSubmit={handleSubmit}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Record driver check-in</p>
-          <p className="mt-0.5 text-xs text-slate-500">
-            {live
-              ? "Sent to the live backend as a dispatcher report (scenario drivers)."
-              : "Dispatcher-entered. Invalidates pending recommendations."}
-          </p>
-        </div>
-        {live && (
-          <Button
-            size="sm"
-            onClick={fillExampleCall}
-            disabled={!hasExampleDriver || submitting}
-            title={hasExampleDriver ? undefined : "Driver D02 is not in the backend roster"}
-          >
-            Fill D02 example call
-          </Button>
-        )}
-      </div>
-      <p className="mt-1.5 text-xs font-medium text-slate-600">
+    <form
+      id="driver-report"
+      aria-labelledby="driver-report-title"
+      className="border-b border-line bg-paper px-6 py-5"
+      onSubmit={handleSubmit}
+    >
+      <p className="eyebrow text-rust">{live ? "Phone call or check-in" : "Check-in"}</p>
+      <h3 id="driver-report-title" className="mt-1 font-display text-lg font-semibold leading-tight text-navy">
+        Record driver report
+      </h3>
+      <p className="mt-1 text-xs text-ink-muted">
+        {live
+          ? "Sent to the live backend as a dispatcher report (scenario drivers)."
+          : "Dispatcher-entered. Invalidates pending recommendations."}
+      </p>
+      {live && (
+        <Button
+          size="sm"
+          className="mt-3"
+          onClick={fillExampleCall}
+          disabled={!hasExampleDriver || submitting}
+          title={hasExampleDriver ? undefined : "Driver D02 is not in the backend roster"}
+        >
+          Fill D02 example call
+        </Button>
+      )}
+      <p className="mt-3 text-xs font-semibold text-navy">
         A report updates availability only. It never approves or dispatches anything.
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <label className="col-span-2 text-xs text-slate-600">
           Driver
           <select className={`${inputClass} mt-1`} value={driverId} onChange={(e) => selectDriver(e.target.value)}>
@@ -245,33 +256,48 @@ export function DriverCheckInForm({
           />
         </label>
       </div>
-      <Button type="submit" variant="primary" className="mt-3 w-full" disabled={submitting}>
+      <Button type="submit" variant="primary" className="mt-4 w-full" disabled={submitting} aria-busy={submitting}>
         {submitting ? "Sending…" : live ? "Send report" : "Save check-in"}
       </Button>
 
-      {outcome && (
-        <div role="status" className="mt-3 space-y-1 rounded-md border border-teal-200 bg-teal-50 px-3 py-2 text-xs text-teal-900">
-          {outcome.duplicate ? (
-            <p>
-              <span className="font-semibold">Duplicate ignored.</span> This report was already recorded, so nothing
-              changed.
-            </p>
-          ) : (
-            <p>
-              <span className="font-semibold">Report recorded</span> for {outcome.driverName}. The live queue has been
-              refreshed.
-            </p>
-          )}
-          {outcome.planInvalidated && (
-            <p className="text-amber-900">
-              <span className="font-semibold">Plan invalidated.</span> The stored recovery plan is out of date and
-              needs regenerating.
-            </p>
-          )}
-        </div>
-      )}
+      <div aria-live="polite">
+        {outcome && (
+          <div className="mt-3 flex gap-2.5 rounded-md border border-ready/40 bg-ready-soft px-3 py-2.5 text-xs text-ready">
+            <span
+              className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-ready text-[11px] font-bold text-white"
+              aria-hidden
+            >
+              ✓
+            </span>
+            <div className="space-y-1">
+              {outcome.duplicate ? (
+                <p>
+                  <span className="font-semibold">Duplicate ignored.</span> This report was already recorded, so nothing
+                  changed.
+                </p>
+              ) : live ? (
+                <p>
+                  <span className="font-semibold">Report recorded for {outcome.driverName}.</span> The live queue has been
+                  refreshed; any entry whose status changed is highlighted.
+                </p>
+              ) : (
+                <p>
+                  <span className="font-semibold">Check-in saved for {outcome.driverName}.</span> It is in the activity
+                  log. Any pending recommendations are now out of date; regenerate the plan to use it.
+                </p>
+              )}
+              {outcome.planInvalidated && (
+                <p className="text-awaiting">
+                  <span className="font-semibold">Plan invalidated.</span> The stored recovery plan is out of date and
+                  needs regenerating.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
       {error && (
-        <p role="alert" className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+        <p role="alert" className="mt-3 rounded-md border border-blocked/30 bg-blocked-soft px-3 py-2 text-xs text-blocked">
           {error}
         </p>
       )}

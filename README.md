@@ -37,6 +37,11 @@ approval. All data in this repository is **synthetic**.
   - Shared-type and date-handling changes for the dashboard are listed in
     [docs/frontend-coordination.md](docs/frontend-coordination.md).
 
+- **Retell driver-report intake** (`POST /api/retell/driver-report`,
+  signature-authenticated, deduplicated; uses the shared driver-report
+  service): implemented and tested locally. Setup and the real-call
+  checklist: [docs/retell-integration.md](docs/retell-integration.md).
+
 ## Run locally
 
 ```bash

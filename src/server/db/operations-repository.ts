@@ -197,6 +197,17 @@ export const SNAPSHOT_EVENT_LIMIT = 200;
 export class OperationsRepository implements DriverReportStore {
   constructor(private readonly db: SupabaseClient) {}
 
+  /** Simulated clock and scenario time zone, or null if the scenario import has not run. */
+  async getClock(): Promise<{ simNow: string; timeZone: string } | null> {
+    const { data, error } = await this.db
+      .from("demo_state")
+      .select("sim_now, time_zone")
+      .eq("id", 1)
+      .maybeSingle<{ sim_now: string; time_zone: string }>();
+    if (error) throw new Error(`demo_state: ${error.message}`);
+    return data ? { simNow: toZonedIso(data.sim_now, data.time_zone), timeZone: data.time_zone } : null;
+  }
+
   private async timeZone(): Promise<string> {
     const { data } = await this.db.from("demo_state").select("time_zone").eq("id", 1).maybeSingle<{ time_zone: string }>();
     return data?.time_zone ?? DEFAULT_TIME_ZONE;
